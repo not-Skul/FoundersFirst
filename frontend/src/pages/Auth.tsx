@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -19,23 +20,52 @@ const Auth = () => {
     email: "",
     password: "",
   });
-
+//i have made changes in the handlesubmit function and added backend api's to it 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  e.preventDefault();
+  setIsLoading(true);
 
-    // Simulate auth
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: mode === "login" ? "Welcome back!" : "Account created!",
-        description: mode === "login" 
-          ? "You've successfully logged in." 
-          : "Your account has been created. Welcome to FoundersFirst!",
-      });
-      navigate("/");
-    }, 1500);
-  };
+  try {
+    const url =
+      mode === "login"
+        ? "http://localhost:5000/login"
+        : "http://localhost:5000/signup";
+
+    const payload =
+      mode === "login"
+        ? {
+            email: formData.email,
+            password: formData.password,
+          }
+        : {
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+          };
+
+    const res = await axios.post(url, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    toast({
+      title: "Success",
+      description: res.data.message,
+    });
+
+
+    navigate("/");
+  } catch (error: any) {
+    toast({
+      title: "Authentication failed",
+      description:
+        error.response?.data?.message || "Something went wrong",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-background flex">
