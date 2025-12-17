@@ -43,17 +43,14 @@ const Auth = () => {
             password: formData.password,
           };
 
-    const res = await axios.post(url, payload, {
-      headers: { "Content-Type": "application/json" },
-    });
+    const res = await axios.post(url, payload);
 
-    toast({
-      title: "Success",
-      description: res.data.message,
-    });
+if (res.data.token) {
+  localStorage.setItem("token", res.data.token);
+}
 
+navigate("/dashboard");
 
-    navigate("/");
   } catch (error: any) {
     toast({
       title: "Authentication failed",

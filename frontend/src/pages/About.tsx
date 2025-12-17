@@ -30,18 +30,18 @@ const values = [
 
 const team = [
   {
-    name: "Priya Sharma",
-    role: "Founder & CEO",
+    name: "Anurag singh bhagour",
+    role: "Software engineer",
     bio: "Former startup founder with 10+ years in the Indian startup ecosystem.",
   },
   {
-    name: "Rahul Mehta",
-    role: "CTO",
+    name: "Saksham kulshrestha",
+    role: "Software engineer",
     bio: "Ex-Google engineer passionate about building AI-powered solutions.",
   },
   {
-    name: "Ananya Gupta",
-    role: "Head of Partnerships",
+    name: "Muskan agarwal",
+    role: "Software engineer",
     bio: "Connected 500+ startups with government schemes and investors.",
   },
 ];

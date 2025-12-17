@@ -2,39 +2,72 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const navLinks = [
+/* ---------- NAV CONFIG ---------- */
+
+const publicNavLinks = [
   { label: "Home", href: "/" },
-  { label: "Dashboard", href: "/dashboard" },
   { label: "AI Bot", href: "/ai-bot" },
   { label: "Schemes", href: "/schemes" },
   { label: "Knowledge Bank", href: "/knowledge" },
   { label: "About Us", href: "/about" },
 ];
 
+const authNavLinks = [
+  { label: "Dashboard", href: "/dashboard" },
+  { label: "AI Bot", href: "/ai-bot" },
+  { label: "Schemes", href: "/schemes" },
+  { label: "Knowledge Bank", href: "/knowledge" },
+];
+
+
 export function Header() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("token")
+  );
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setIsAuthenticated(!!localStorage.getItem("token"));
+    };
+
+    window.addEventListener("auth-change", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("auth-change", handleAuthChange);
+    };
+  }, []);
+
+  const navLinks = isAuthenticated ? authNavLinks : publicNavLinks;
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.dispatchEvent(new Event("auth-change"));
+    window.location.href = "/auth?mode=login";
+  };
 
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4 }}
       className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50"
     >
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          {/* Logo with Indian-inspired accent */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-sm group-hover:shadow-[0_0_12px_hsl(43_88%_66%_/_0.3)] transition-shadow duration-300">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">F</span>
             </div>
-            <span className="font-bold text-xl text-foreground font-display">FoundersFirst</span>
+            <span className="font-bold text-xl">FoundersFirst</span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
@@ -51,22 +84,30 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Auth Buttons */}
+          {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/auth?mode=login">Login</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/auth?mode=signup">Sign Up</Link>
-            </Button>
+            {!isAuthenticated ? (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/auth?mode=login">Login</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/auth?mode=signup">Sign Up</Link>
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Logout
+              </Button>
+            )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Toggle */}
           <button
             className="md:hidden p-2 rounded-lg hover:bg-secondary"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
@@ -93,13 +134,26 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
-            <div className="flex gap-3 mt-4 pt-4 border-t border-border">
-              <Button variant="outline" className="flex-1" asChild>
-                <Link to="/auth?mode=login">Login</Link>
-              </Button>
-              <Button className="flex-1" asChild>
-                <Link to="/auth?mode=signup">Sign Up</Link>
-              </Button>
+
+            <div className="mt-4 pt-4 border-t border-border">
+              {!isAuthenticated ? (
+                <div className="flex gap-3">
+                  <Button variant="outline" className="flex-1" asChild>
+                    <Link to="/auth?mode=login">Login</Link>
+                  </Button>
+                  <Button className="flex-1" asChild>
+                    <Link to="/auth?mode=signup">Sign Up</Link>
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
+              )}
             </div>
           </nav>
         </motion.div>
