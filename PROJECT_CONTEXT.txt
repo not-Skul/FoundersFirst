@@ -1,0 +1,1599 @@
+================================================================================
+                        FOUNDERS FIRST - PROJECT CONTEXT DOCUMENT
+                          Comprehensive AI Context Guide
+================================================================================
+
+DOCUMENT VERSION: 1.0
+LAST UPDATED: December 2025
+PROJECT STATUS: Early Development / MVP Phase
+
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+PROJECT NAME: Founders First
+
+PURPOSE & HIGH-LEVEL OBJECTIVES:
+Founders First is a comprehensive digital platform designed to support aspiring 
+entrepreneurs and startup founders in India by providing centralized access to 
+government schemes, funding opportunities, mentorship resources, and AI-powered 
+guidance.
+
+PRIMARY PROBLEM STATEMENT:
+Indian entrepreneurs face significant challenges in discovering and navigating 
+relevant government schemes and funding opportunities. Information is fragmented 
+across multiple government websites, eligibility criteria are complex, and many 
+promising founders miss critical opportunities due to lack of awareness or 
+understanding of available support systems.
+
+TARGET USERS:
+- Aspiring entrepreneurs (age 18+)
+- Early-stage startup founders
+- Students interested in entrepreneurship
+- Women entrepreneurs
+- Entrepreneurs from underrepresented categories (SC/ST/OBC)
+- Individuals from Tier-II and Tier-III cities
+
+KEY FEATURES & EXPECTED OUTCOMES:
+
+1. Scheme Discovery & Filtering
+   - Comprehensive database of government schemes with detailed information
+   - Multi-dimensional filtering (by funding amount, category, sector, geography)
+   - Personalized scheme recommendations based on user profile
+
+2. AI-Powered Guidance (AI Bot)
+   - Interactive chatbot that analyzes user idea and profile
+   - Generates personalized entrepreneurial roadmaps
+   - Provides step-by-step guidance for startup development
+   - Offers contextual advice based on user's experience level and startup stage
+
+3. User Dashboard
+   - Personalized profile management
+   - Tracking of saved schemes and resources
+   - Progress monitoring on entrepreneurial journey
+   - Onboarding process to collect user preferences
+
+4. Knowledge Bank
+   - Curated resources for entrepreneurs
+   - Best practices and educational content
+   - Links to relevant documentation and guides
+
+5. Authentication & User Management
+   - Secure signup/login functionality
+   - JWT-based session management
+   - Protected routes for authenticated users
+
+EXPECTED OUTCOMES:
+- Enable entrepreneurs to discover relevant schemes in < 5 minutes
+- Provide personalized roadmaps for startup development
+- Increase awareness of available government support
+- Support job creation and economic growth through entrepreneurship
+- Bridge the gap between entrepreneurs and funding opportunities
+
+
+================================================================================
+2. SCOPE AND ASSUMPTIONS
+================================================================================
+
+IN-SCOPE FUNCTIONALITY:
+
+Frontend Features:
+✓ Public landing page with hero section and feature highlights
+✓ Schemes catalog with advanced filtering capabilities
+✓ Interactive AI bot for personalized guidance and roadmap generation
+✓ Knowledge bank with curated resources
+✓ User authentication (signup/login)
+✓ Protected dashboard for authenticated users
+✓ User profile management and onboarding
+✓ About/Information pages
+✓ Responsive design for desktop and mobile
+
+Backend Features:
+✓ User authentication and authorization (JWT)
+✓ User data management (signup, profile updates)
+✓ Secure credential handling (password hashing with bcrypt)
+✓ Database integration for persistent storage
+✓ API endpoints for frontend communication
+✓ CORS support for cross-origin requests
+
+AI/Data Features:
+✓ Scheme data collection and structuring (web scraping)
+✓ Scheme data storage and retrieval
+✓ User profile-based scheme recommendations
+✓ Placeholder AI bot infrastructure (integration with external API ready)
+
+OUT-OF-SCOPE FUNCTIONALITY (At Current Stage):
+
+✗ Direct payment processing or financial transactions
+✗ Scheme application submission through platform
+✗ Direct government agency integration
+✗ Real-time scheme status tracking from government databases
+✗ Native mobile applications (web-responsive only)
+✗ Multi-language support (currently English only)
+✗ Video content generation or hosting
+✗ Integration with third-party lending platforms
+✗ Advanced machine learning models for prediction
+✗ Social networking features
+
+TECHNICAL CONSTRAINTS:
+
+1. Development Environment
+   - Python 3.11+ required
+   - Node.js with npm/bun package manager
+   - PostgreSQL database (cloud-hosted on Azure)
+   - Flask web server (single-threaded in development)
+
+2. Data Constraints
+   - Initial scheme data limited to ~830 schemes
+   - Data quality depends on source HTML scraping accuracy
+   - No real-time data synchronization with government sources
+
+3. Security Constraints
+   - JWT tokens expire after 1 day
+   - No multi-factor authentication at current stage
+   - Database credentials stored in .env (security improvement needed)
+   - SSL/TLS required for database connections
+
+4. Performance Constraints
+   - Backend runs on single Flask instance (no load balancing)
+   - Database connections must be managed efficiently
+   - Frontend proxies through localhost:5000 in development
+
+5. Time/Resource Constraints
+   - AI bot integration not yet implemented (placeholder structure)
+   - Limited testing infrastructure in place
+   - Minimal error handling and logging
+
+ASSUMPTIONS MADE DURING DESIGN & DEVELOPMENT:
+
+1. Technical Assumptions
+   - Users have stable internet connectivity
+   - PostgreSQL is the primary database (psycopg2 driver)
+   - Frontend always available at same origin as backend or accessible via proxy
+   - JWT secret key can be stored in code (TODO: move to environment)
+   - Users' browsers support ES2020+ JavaScript features
+
+2. Business Assumptions
+   - Government schemes database will remain relatively stable (not real-time changes)
+   - Target users prefer digital self-service over phone support
+   - Personalized recommendations will increase user engagement
+   - Users trust government-curated scheme information
+   - Majority of users access platform from India
+
+3. User Behavior Assumptions
+   - Users are willing to complete onboarding profile
+   - Users prefer English language interface
+   - Users will engage with AI bot for guidance
+   - Email is reliable contact method for users
+   - Desktop is primary access device initially
+
+4. Data Assumptions
+   - Scraped scheme data is accurate and up-to-date
+   - Users' personal data is sensitive and needs protection
+   - Scheme eligibility criteria can be accurately categorized
+   - User journey stages follow typical startup progression
+
+
+================================================================================
+3. SYSTEM ARCHITECTURE
+================================================================================
+
+HIGH-LEVEL ARCHITECTURE OVERVIEW:
+
+The Founders First platform follows a three-tier web application architecture:
+
+    ┌─────────────────────────────────────────────────────────┐
+    │              CLIENT LAYER (Browser)                     │
+    │  ┌──────────────────────────────────────────────────┐   │
+    │  │   React SPA with React Router                    │   │
+    │  │   - Component-based UI with shadcn-ui            │   │
+    │  │   - State management (React Context, React Query)│   │
+    │  │   - Responsive design with Tailwind CSS          │   │
+    │  └──────────────────────────────────────────────────┘   │
+    │                         │                                 │
+    │                    HTTP/HTTPS                            │
+    │                         │                                 │
+    └─────────────────────────────────────────────────────────┘
+                              │
+    ┌─────────────────────────────────────────────────────────┐
+    │           APPLICATION LAYER (Backend API)               │
+    │  ┌──────────────────────────────────────────────────┐   │
+    │  │   Flask Web Server (Python)                      │   │
+    │  │   - REST API endpoints                           │   │
+    │  │   - Authentication/Authorization (JWT)           │   │
+    │  │   - Business logic and data processing           │   │
+    │  │   - CORS support for cross-origin requests       │   │
+    │  └──────────────────────────────────────────────────┘   │
+    │                         │                                 │
+    │                    Database Connection                   │
+    │                         │                                 │
+    └─────────────────────────────────────────────────────────┘
+                              │
+    ┌─────────────────────────────────────────────────────────┐
+    │            DATA LAYER (Persistence)                      │
+    │  ┌──────────────────────────────────────────────────┐   │
+    │  │   PostgreSQL Database (Azure)                    │   │
+    │  │   - User credentials and profiles                │   │
+    │  │   - User preferences and saved data              │   │
+    │  │   - Scheme information (future)                  │   │
+    │  └──────────────────────────────────────────────────┘   │
+    │                                                           │
+    │  ┌──────────────────────────────────────────────────┐   │
+    │  │   Static Data Storage (JSON)                     │   │
+    │  │   - schemes_structured_documents.json            │   │
+    │  │   - Scheme database (~830 schemes)               │   │
+    │  └──────────────────────────────────────────────────┘   │
+    └─────────────────────────────────────────────────────────┘
+
+
+MAJOR COMPONENTS & INTERACTIONS:
+
+FRONTEND COMPONENTS ARCHITECTURE:
+
+1. Layout Components
+   - Header: Navigation bar with links to main sections
+   - Footer: Company info and links
+   - Used across all pages for consistent branding
+
+2. Page Components
+   - Index: Landing page with hero, features, schemes preview, knowledge preview
+   - Auth: Signup/Login page with form validation
+   - Dashboard: User dashboard (protected route)
+   - Schemes: Scheme catalog with filtering and search
+   - AIBot: Interactive AI assistant for personalized guidance
+   - Knowledge: Knowledge bank and resources
+   - About: Information about the platform
+   - NotFound: 404 error page
+
+3. Dashboard Sub-components
+   - UserOverview: User profile summary
+   - ProfileCompletion: Progress indicator for profile completion
+   - JourneyInsights: Insights on user's entrepreneurial journey
+   - QuickActions: Shortcuts to common tasks
+   - OnboardingModal: Initial setup wizard for new users
+
+4. Home Section Sub-components
+   - HeroSection: Main landing page hero
+   - FeaturesSection: Feature highlights
+   - SchemesPreview: Featured schemes preview
+   - KnowledgeBankPreview: Featured knowledge resources
+
+5. UI Component Library
+   - shadcn-ui components (button, input, dialog, accordion, etc.)
+   - Built on Radix UI primitives
+   - Styled with Tailwind CSS
+   - Toast notifications via Sonner
+
+BACKEND COMPONENTS:
+
+1. API Endpoints
+   - POST /signup: User registration
+   - POST /login: User authentication
+   - GET /user: Retrieve user profile (protected)
+   - PUT /user: Update user profile (protected)
+   - GET /schemes: Retrieve scheme data (future)
+   - POST /recommendations: Get personalized recommendations (future)
+
+2. Authentication Module
+   - JWT token generation and validation
+   - Password hashing with bcrypt
+   - Protected route decorators
+
+3. Database Layer
+   - get_db_connection(): Connection pooling and management
+   - User table: id, name, email, password (hashed)
+   - Support for future tables: schemes, saved_items, recommendations
+
+4. Error Handling
+   - Standard HTTP status codes (200, 201, 400, 401, 404, 500)
+   - JSON error responses with descriptive messages
+   - Input validation for all endpoints
+
+EXTERNAL INTEGRATIONS:
+
+1. Azure PostgreSQL Database
+   - Host: founderdb.postgres.database.azure.com
+   - Requires SSL connection
+   - Credentials via environment variables
+
+2. AI Services (Future)
+   - Placeholder structure for LLM integration
+   - Roadmap: Connect to ChatGPT API or similar service
+
+3. Frontend-Backend Communication
+   - Axios HTTP client for API calls
+   - React Query for async state management
+   - Proxy configuration for development environment
+
+
+DEPLOYMENT ENVIRONMENT:
+
+CURRENT DEPLOYMENT SETUP:
+
+Development Environment:
+- Frontend: Vite dev server (localhost:8080)
+- Backend: Flask development server (localhost:5000)
+- Database: Azure PostgreSQL (cloud-hosted)
+- OS: Windows (development machine)
+
+Production Deployment Approach (Planned):
+- Cloud Platform: Azure or similar
+- Frontend: Static hosting (Azure Static Web Apps or similar)
+- Backend: Container deployment (Docker on Azure Container Instances or App Service)
+- Database: Azure PostgreSQL (managed service)
+- CDN: Azure CDN for static assets
+- CI/CD: GitHub Actions for automated deployment
+
+SCALABILITY CONSIDERATIONS:
+
+Current Limitations:
+- Single Flask instance (no horizontal scaling)
+- No caching layer (Redis)
+- No static asset CDN
+- Database connection limits based on plan tier
+
+Scalability Improvements Needed:
+- Containerize backend with Docker
+- Implement load balancing (Nginx)
+- Add Redis for caching and sessions
+- Implement database connection pooling
+- Use CDN for frontend assets
+- Implement API rate limiting
+- Add background job queue (Celery) for long-running tasks
+
+GEOGRAPHIC CONSIDERATIONS:
+- Target users primarily in India
+- Database hosted in Azure region optimized for India-Asia latency
+- No regional redundancy at current stage
+
+
+================================================================================
+4. TECHNOLOGY STACK
+================================================================================
+
+FRONTEND TECHNOLOGY STACK:
+
+Core Framework & Language:
+- React 18.3.1: UI library for component-based development
+- TypeScript 5.8.3: Strongly typed JavaScript for better developer experience
+- React Router 6.30.1: Client-side routing for single-page application
+- Vite 5.4.19: Modern bundler and dev server (5x faster than Webpack)
+
+Build & Development Tools:
+- Node.js with npm/bun: Package management and dependency resolution
+- Tailwind CSS 3.4.17: Utility-first CSS framework for responsive design
+- PostCSS 8.5.6: CSS transformation tool
+- TypeScript ESLint: Code linting and quality assurance
+
+UI Component Library:
+- shadcn-ui: High-quality, customizable UI components
+- Radix UI: Unstyled, accessible component primitives (foundation for shadcn)
+  - @radix-ui/react-*: 25+ component libraries (accordion, dialog, menu, etc.)
+- Lucide React 0.462.0: Beautiful, consistent icon library (460+ icons)
+
+State Management & Data Fetching:
+- React Query (@tanstack/react-query 5.83.0): Server state management
+- React Hook Form 7.61.1: Efficient form state management
+- React Context API: Local state management (UserProfileContext)
+- Zod 3.25.76: TypeScript-first schema validation
+
+UI/UX Libraries:
+- Framer Motion 12.23.25: Animation library for smooth interactions
+- Sonner 1.7.4: Toast notification system
+- date-fns 3.6.0: Modern date manipulation library
+- Embla Carousel React 8.6.0: Carousel/slider component
+- React Resizable Panels 2.1.9: Resizable panel layouts
+
+HTTP & API Communication:
+- Axios 1.13.2: Promise-based HTTP client for API calls
+- Proxy configuration via package.json for development backend communication
+
+Developer Experience:
+- @vitejs/plugin-react-swc 3.11.0: Fast React refresh with SWC compiler
+- Lovable Tagger 1.1.11: Component tagging for Lovable platform
+- TypeScript JSDoc for type hints and auto-completion
+
+CSS Utilities:
+- Tailwind CSS Animate 1.0.7: Animation utilities
+- Tailwind Merge 2.6.0: Smart class name merging
+- @tailwindcss/typography: Rich text styling
+
+
+BACKEND TECHNOLOGY STACK:
+
+Core Framework & Language:
+- Python 3.11+: Server-side language
+- Flask 3.1.2: Lightweight web framework for REST API development
+- Flask-CORS 6.0.2: Enable cross-origin resource sharing
+
+Authentication & Security:
+- PyJWT 2.10.1: JSON Web Token generation and validation
+- Flask-Bcrypt 1.0.1: Password hashing and verification with bcrypt algorithm
+- dotenv 0.9.9: Environment variable management from .env files
+
+Database Connectivity:
+- psycopg2 2.9.11 & psycopg2-binary 2.9.11: PostgreSQL adapter for Python
+- mysql-connector-python 9.5.0: MySQL driver (for future database flexibility)
+
+Development & Configuration:
+- Python virtual environment (managed via .python-version file)
+- Hot-reload enabled in development mode
+
+Project Structure:
+- main.py: Flask application entry point with API endpoints
+- db.py: Database connection utilities
+- scraper.py: Web scraper for scheme data collection (in ai-backend)
+
+
+DATABASES & STORAGE:
+
+Primary Database:
+- PostgreSQL (Azure Managed Service)
+- Version: Latest stable (typically 13+)
+- Host: founderdb.postgres.database.azure.com
+- Port: 5432
+- SSL Mode: Required
+- Tables Implemented:
+  * users: id, name, email, password (hashed)
+- Tables Planned:
+  * schemes: scheme metadata
+  * user_preferences: personalized settings
+  * saved_schemes: user's bookmarked schemes
+  * ai_interactions: chat history and preferences
+
+Static Data Storage:
+- JSON file: schemes_structured_documents.json
+  * Format: Array of scheme objects
+  * Records: ~830 government schemes
+  * Fields: scheme_name, ministry, department, key_sectors, brief, eligibility,
+            benefits, benefit_tags, tenure, application_link
+  * Location: backend/Data/
+
+Future Storage Considerations:
+- Redis: For caching and session management
+- Object Storage (Azure Blob Storage): For user uploads and media
+- Search Index (Elasticsearch): For advanced scheme searching
+
+
+DEVOPS TOOLS & INFRASTRUCTURE:
+
+Version Control:
+- Git: Distributed version control
+- GitHub: Remote repository hosting
+
+Development Environment:
+- VS Code: Primary IDE
+- .gitignore: Standard Python/Node.js exclusions
+- .env: Environment variable storage (not version controlled)
+
+Configuration Management:
+- pyproject.toml: Python project metadata and dependencies (backend)
+- package.json: Node.js project metadata and dependencies (frontend)
+- .python-version: Python version specification (pyenv)
+- vite.config.ts: Vite build configuration
+- tailwind.config.ts: Tailwind CSS customization
+- postcss.config.js: PostCSS plugin configuration
+- tsconfig.json & tsconfig.app.json: TypeScript compiler options
+
+CI/CD Pipeline (Planned):
+- GitHub Actions: Automated testing and deployment
+- Docker: Containerization for consistent deployment
+- Environment-specific configurations for dev/staging/production
+
+Container Infrastructure (Planned):
+- Docker: Containerize backend Flask application
+- Docker Compose: Local multi-container development environment
+
+Monitoring & Logging (Planned):
+- Application logging to stdout (Docker logs)
+- Error tracking service (e.g., Sentry)
+- Performance monitoring (e.g., New Relic)
+
+
+THIRD-PARTY SERVICES & INTEGRATIONS:
+
+Current Integrations:
+- Azure PostgreSQL: Database hosting
+- Lovable Platform: Development environment and deployment
+
+Planned Integrations:
+- OpenAI API (ChatGPT): AI bot for guidance and recommendations
+- Government APIs: Real-time scheme updates (GOVT portal APIs)
+- Email Service: SendGrid or AWS SES for notifications
+- SMS Service: Twilio for OTP and alerts
+- Analytics: Google Analytics or Mixpanel
+- Error Tracking: Sentry or similar
+- CDN: Azure CDN or CloudFlare for static assets
+
+Data Source:
+- Government scheme data: Web-scraped from official government portals
+- Scraper Tool: BeautifulSoup (Python library)
+
+
+AI / ML MODELS:
+
+CURRENT AI IMPLEMENTATION STATUS:
+The AI bot feature is currently in placeholder/skeleton form. Full integration 
+with language models is planned but not yet implemented.
+
+PLANNED AI/ML MODELS:
+
+1. Large Language Model (LLM) Integration
+   Model Type: Generative AI (likely GPT-based)
+   Provider: OpenAI (ChatGPT) or similar (Anthropic Claude, Google Gemini)
+   Purpose:
+   - Generate personalized startup roadmaps
+   - Provide contextual advice on scheme selection
+   - Answer entrepreneurship-related questions
+   - Suggest next steps based on user profile
+
+2. Recommendation Engine
+   Model Type: Collaborative filtering / Content-based recommendation
+   Purpose:
+   - Match users with relevant government schemes
+   - Personalize scheme recommendations based on:
+     * Experience level (student, beginner, professional, serial entrepreneur)
+     * Startup stage (idea, validation, prototype, early revenue)
+     * Industry interests
+     * Geography (location-based schemes)
+     * Funding requirements
+   Approach: Rule-based matching initially, ML-based recommendations in future
+
+3. Roadmap Generation Model
+   Model Type: Sequence-to-sequence or template-based generation
+   Input Features:
+   - User's business idea
+   - Experience level
+   - Available funding
+   - Timeline preferences
+   - Industry sector
+   Output: Structured roadmap with phases, tasks, timelines, resource links
+
+CURRENT MODEL SETUP:
+
+Model Inference Architecture (Planned):
+- API-based inference: Call external LLM API (e.g., OpenAI)
+- Alternative: Host local model (LLaMA, Mistral)
+- Response caching to reduce API costs and latency
+
+Integration Points:
+- Backend: /api/ai-recommendations endpoint (planned)
+- Frontend: AIBot component communicates with backend
+
+Performance Considerations:
+- API response time target: < 3 seconds for user experience
+- Rate limiting: Implement per-user quotas to control costs
+- Response caching: 24-hour cache for identical queries
+
+Training/Fine-tuning Approach:
+- Initial: Use pre-trained general-purpose LLM (no fine-tuning)
+- Future: Collect user feedback and fine-tune models
+- Data: Scheme data, user interactions, expert feedback
+
+Evaluation Metrics (Planned):
+- Recommendation relevance: % of schemes matched to user eligibility
+- Roadmap quality: User satisfaction scores
+- Response accuracy: Manual evaluation by domain experts
+- Latency: API response times
+- Cost efficiency: API calls per user, token usage
+
+
+================================================================================
+5. DATA
+================================================================================
+
+DATA SOURCES AND FORMATS:
+
+Primary Data Source: Government Schemes
+- Source: Indian Government Official Websites
+  * Ministry of Electronics and Information Technology (MeitY)
+  * Ministry of Small Business Development
+  * PMEGP portal
+  * Startup India portal
+  * Other government ministries
+- Collection Method: Web scraping using BeautifulSoup (Python)
+- Format: Structured JSON
+- Volume: ~830 schemes
+- Update Frequency: Manual updates (currently not automated)
+
+Data Structure - Scheme Document:
+{
+  "scheme_name": "String - Official name of the scheme",
+  "ministry": "String - Governing ministry/department",
+  "department": "String - Specific department if applicable",
+  "key_sectors": "String - Comma-separated industries/sectors",
+  "brief": "String - 100-200 word summary of scheme",
+  "eligibility": "String - Eligibility criteria description",
+  "benefits": "String - List of benefits offered",
+  "benefit_tags": "String - Comma-separated categorization (Funding, Infrastructure, etc.)",
+  "tenure": "String - Duration or validity period of scheme",
+  "application_link": "String - URL to official application/documentation"
+}
+
+User Data Structure:
+- users table fields:
+  * id: UUID or auto-incremented integer
+  * name: String (user's full name)
+  * email: String (unique email address)
+  * password: String (bcrypt hashed)
+  * created_at: Timestamp
+  * updated_at: Timestamp (optional, not yet implemented)
+
+User Profile Data (Stored in Frontend Context, Future DB):
+{
+  "id": "User unique identifier",
+  "displayName": "User's display name",
+  "email": "Email address",
+  "experienceLevel": "student | beginner | professional | serial_entrepreneur | ''",
+  "educationLevel": "Highest qualification",
+  "location": {
+    "country": "Country",
+    "state": "State/Province",
+    "city": "City"
+  },
+  "industryInterests": ["Array", "of", "industries"],
+  "startupStage": "idea | validation | prototype | early_revenue | ''",
+  "onboardingCompleted": "Boolean",
+  "createdAt": "Timestamp"
+}
+
+Chat/AI Interaction Data (Future):
+- User query/prompt
+- AI response
+- Timestamp
+- Session ID
+- User ID
+- Quality rating (future)
+
+
+DATA PREPROCESSING AND PIPELINES:
+
+Web Scraping Pipeline (ai-backend/scraper.py):
+1. Input: HTML file from government website
+2. Parse: BeautifulSoup HTML parsing
+3. Extract: CSS selector-based field extraction
+4. Structure: Map extracted data to schema
+5. Output: schemes_structured_documents.json
+6. Storage: Move file to backend/Data/
+
+Data Validation:
+- Ensure required fields are present
+- Remove HTML/special characters from text
+- Validate URLs format
+- Deduplicate scheme entries
+
+Data Enrichment (Planned):
+- Add category tags for easy filtering
+- Normalize ministry/department names
+- Standardize eligibility criteria format
+- Add geographic mapping
+
+Data Pipeline (Future):
+- Automated scheduled scraping (daily/weekly)
+- Change detection and incremental updates
+- Data quality monitoring
+- Error logging and alerting
+
+
+DATA PRIVACY, SECURITY, AND COMPLIANCE CONSIDERATIONS:
+
+Privacy Measures Implemented:
+- Password hashing: Bcrypt with salt
+- HTTPS/SSL: Required for all connections
+- Environment variables: Sensitive credentials in .env (not version controlled)
+- Limited data collection: Minimal user information required
+
+Privacy Measures Needed:
+- Privacy Policy: Document data collection and usage
+- Terms of Service: User agreement and responsibilities
+- Consent Management: Explicit user consent for data processing
+- Data Retention: Define data deletion policies
+- GDPR Compliance: If serving EU users (currently India-focused)
+
+Security Measures Implemented:
+- JWT Authentication: Secure session management
+- CORS: Restrict API access to authorized origins
+- Input Validation: Server-side validation of form inputs
+- SQL Injection Prevention: Parameterized queries (psycopg2)
+
+Security Measures Needed:
+- SQL Injection Defense: Full audit and implementation
+- XSS Prevention: Content Security Policy headers
+- CSRF Protection: Token-based protection
+- Rate Limiting: API rate limiting to prevent abuse
+- Audit Logging: Log all data access and modifications
+- Penetration Testing: Regular security assessments
+- Secret Management: Move JWT secret to environment variables
+
+Compliance Standards:
+- India Data Protection Act: Not yet applicable (no explicit compliance needed)
+- Startup India Guidelines: Alignment with government recommendations
+- Accessibility: WCAG 2.1 Level AA compliance (planned)
+
+Data Retention Policy (Planned):
+- User accounts: Retain indefinitely unless user requests deletion
+- Login history: Retain for 6 months
+- Chat history: Retain for 1 year
+- Scheme data: Retain with version history
+
+Data Subject Rights (GDPR-aligned, for future EU expansion):
+- Right to Access: Users can download their data
+- Right to Rectification: Users can update their information
+- Right to Deletion: "Right to be forgotten" implementation
+- Data Portability: Export data in standard formats
+
+
+================================================================================
+6. METHODOLOGIES AND PRACTICES
+================================================================================
+
+DEVELOPMENT METHODOLOGY:
+
+Current Approach: Iterative Development with Feature Sprints
+- No formal Agile/Scrum framework currently
+- Feature-based development cycles
+- Regular testing and iteration
+
+Recommended Approach (For Production):
+- Agile/Scrum Methodology:
+  * 2-week sprints
+  * Daily standups
+  * Sprint planning and review meetings
+  * Sprint retrospectives for continuous improvement
+- Kanban Board: Use GitHub Projects for tracking
+- Version Control: Git with semantic commit messages
+- Code Review: Pull requests with peer review before merge
+
+Development Workflow:
+1. Feature Planning: Define requirements and acceptance criteria
+2. Design: Architecture and UI/UX design phase
+3. Development: Code implementation with best practices
+4. Testing: Unit tests, integration tests, manual testing
+5. Review: Code review and quality check
+6. Deployment: Deploy to staging, then production
+7. Monitoring: Track performance and errors
+
+Version Control Best Practices:
+- Main branch: Production-ready code only
+- Develop branch: Integration branch for features
+- Feature branches: Named as feature/feature-name
+- Hotfix branches: For production emergency fixes
+- Semantic versioning: MAJOR.MINOR.PATCH (e.g., 1.0.0)
+- Meaningful commit messages: Describe what and why
+
+
+ML/AI DEVELOPMENT METHODOLOGY:
+
+Current Status: Placeholder Implementation
+
+AI Model Development Lifecycle (When Implemented):
+1. Problem Definition
+   - Define specific AI tasks (scheme matching, roadmap generation)
+   - Identify success metrics
+
+2. Data Collection
+   - Gather training data (schemes, user interactions, expert annotations)
+   - Data quality assurance
+
+3. Model Selection
+   - Pre-trained LLMs (GPT, Claude, etc.)
+   - Custom fine-tuning vs. prompt engineering trade-offs
+   - Evaluation criteria for model selection
+
+4. Model Training (If Fine-tuning)
+   - Prepare training dataset
+   - Hyperparameter tuning
+   - Cross-validation
+
+5. Evaluation
+   - Test on hold-out test set
+   - A/B testing with real users
+   - Measure against defined metrics
+
+6. Deployment
+   - Containerize model
+   - Set up inference pipeline
+   - Monitor model performance
+
+7. Monitoring & Retraining
+   - Track model drift
+   - Monitor user satisfaction
+   - Periodic retraining with new data
+
+8. Documentation
+   - Model documentation
+   - Training procedure documentation
+   - Performance logs
+
+
+TESTING STRATEGIES:
+
+Unit Testing (Backend):
+- Framework: pytest
+- Coverage Target: 80%+
+- Focus: API endpoint logic, authentication, validation
+- Example: Test user signup with valid/invalid inputs
+
+Unit Testing (Frontend):
+- Framework: Vitest or Jest (with React Testing Library)
+- Coverage Target: 70%+
+- Focus: Component rendering, state management, hooks
+- Example: Test form submission and error handling
+
+Integration Testing:
+- Frontend-Backend: Test API communication end-to-end
+- Database: Test data persistence and retrieval
+- Authentication: Test login flow with real database
+
+E2E Testing (End-to-End):
+- Tool: Playwright or Cypress (recommended for future)
+- Scenarios:
+  * User signup and login flow
+  * Scheme search and filtering
+  * Dashboard navigation
+  * AI bot interaction
+
+Performance Testing:
+- Load Testing: Test API under concurrent users
+- Database Query Performance: Optimize slow queries
+- Frontend Performance: Lighthouse audit target score 90+
+
+Model Validation (AI Components):
+- Recommendation Accuracy: Compare with expert selections
+- Roadmap Quality: User satisfaction survey
+- Response Latency: Ensure < 3 seconds response time
+- Edge Cases: Test with unusual user profiles
+
+
+MONITORING AND LOGGING:
+
+Application Logging (Backend):
+- Log Level: INFO for production, DEBUG for development
+- Log Destination: stdout (captured by container logs)
+- Log Format: Structured JSON (planned improvement)
+- What to Log:
+  * API request/response (method, endpoint, status)
+  * Authentication events (login, logout, token refresh)
+  * Database operations (queries, connection issues)
+  * Errors and exceptions with full stack traces
+
+Frontend Monitoring (Future):
+- Error Tracking: Sentry or similar service
+- User Analytics: Track feature usage
+- Performance Monitoring: Core Web Vitals
+- Custom Events: User interactions for feature analytics
+
+Database Monitoring:
+- Query Performance: Log slow queries (> 1 second)
+- Connection Pool: Monitor connection usage
+- Storage: Track database size growth
+- Backups: Ensure regular backups are taken
+
+Infrastructure Monitoring:
+- Server Health: CPU, memory, disk usage
+- Uptime Monitoring: Alerting on service outages
+- Response Times: API latency monitoring
+- Error Rates: Alert if error rate exceeds threshold
+
+Alerting Strategy (Planned):
+- High Priority Alerts: Service down, critical errors
+- Medium Priority: High error rate (> 5%), slow responses
+- Low Priority: Warnings, information
+- Notification Channels: Email, Slack, PagerDuty
+
+Log Retention:
+- Application Logs: 30 days
+- Error Logs: 90 days
+- Audit Logs: 1 year
+
+Dashboards (Future):
+- Overview: System health at a glance
+- Performance: API latency, throughput
+- Errors: Error rate and top errors
+- User Analytics: User growth, feature usage
+- Database: Query performance, storage usage
+
+
+================================================================================
+7. SECURITY AND COMPLIANCE
+================================================================================
+
+AUTHENTICATION AND AUTHORIZATION:
+
+Authentication Mechanism:
+- Type: JWT (JSON Web Token) based stateless authentication
+- Token Generation:
+  * Triggered: Upon successful login
+  * Payload: user_id, expiration timestamp
+  * Secret Key: "supersecretkey" (CRITICAL: Move to environment variable)
+  * Expiration: 1 day from issuance
+  * Algorithm: HS256 (HMAC with SHA-256)
+
+- Token Storage (Frontend):
+  * Location: localStorage (browser storage)
+  * Key Name: "token"
+  * Scope: Accessible across all pages
+  * Risk: XSS attacks can steal tokens (improvement needed)
+
+- Token Validation:
+  * Verified on every protected API request
+  * Server checks signature and expiration
+  * Invalid/expired tokens return 401 Unauthorized
+
+Authorization Rules:
+- Protected Routes:
+  * /dashboard: Requires valid JWT token
+  * User can only access their own profile (user_id matching)
+  * Can extend to role-based access control (RBAC) in future
+
+- Public Routes:
+  * / (landing page)
+  * /schemes (public scheme listing)
+  * /knowledge (public resources)
+  * /about (public information)
+  * /auth (signup/login page)
+
+Password Security:
+- Hashing Algorithm: Bcrypt with auto-generated salt
+- Salt Rounds: Default (10-12 rounds)
+- Hash Verification: Constant-time comparison to prevent timing attacks
+
+User Sessions:
+- No session storage on backend (stateless)
+- Frontend manages token and automatically includes in requests
+- Token refresh: Currently not implemented (token expires after 1 day)
+
+Future Authentication Improvements:
+- Refresh Token Implementation: Extend session without re-login
+- OAuth 2.0 Integration: Google, GitHub, government portal login
+- Multi-Factor Authentication: OTP via email or SMS
+- Session Management: Logout endpoint to invalidate tokens
+- Remember-Me: Persistent sessions with secure cookies
+
+
+DATA PROTECTION MEASURES:
+
+In Transit:
+✓ HTTPS/TLS: Required for all connections to Azure database
+✓ SSL Mode: "require" enforced in psycopg2 connection
+✗ Frontend-Backend: Currently HTTP in development (needs HTTPS in production)
+
+At Rest:
+- Password: Hashed with bcrypt before storage
+- Sensitive Data: Encrypted using environment variables
+- Database Backups: Automated by Azure (managed service)
+- Credential Storage: .env file (not in version control)
+
+Access Control:
+- Database Credentials: Limited to authorized applications
+- Environment Variables: Different values for dev/staging/production
+- API Keys: (To be implemented for future integrations)
+
+Data Anonymization (Planned):
+- Remove personally identifiable info from logs
+- Anonymize user data for analytics
+- Periodic data scrubbing
+
+Encryption Standards:
+- Password Hashing: bcrypt (no raw passwords ever stored)
+- API Communication: TLS 1.2+ (enforced by Azure)
+- Future: Field-level encryption for sensitive data
+
+Vulnerability Management:
+- Dependency Updates: Regular npm/pip dependency updates
+- Security Scanning: npm audit, pip security checks
+- Code Review: Manual security review of changes
+- Penetration Testing: Planned for pre-production
+
+
+COMPLIANCE STANDARDS FOLLOWED:
+
+India-Specific Regulations:
+- Startup India Guidelines: Platform alignment with government initiatives
+- RBI Guidelines (Future): If banking integrations added
+- Digital Personal Data Protection Act 2023: Compliance when it takes effect
+  * User consent for data collection
+  * Data security requirements
+  * User rights (access, correction, deletion)
+
+Accessibility Standards (Planned):
+- WCAG 2.1 Level AA: Web Content Accessibility Guidelines
+  * Keyboard navigation support
+  * Screen reader compatibility
+  * Color contrast ratios (4.5:1 for text)
+  * Alternative text for images
+  * Semantic HTML structure
+
+Data Protection Standards:
+- OWASP Top 10: Security best practices
+  * A01:2021 Broken Access Control: JWT authorization
+  * A02:2021 Cryptographic Failures: Password hashing, SSL/TLS
+  * A03:2021 Injection: Parameterized SQL queries
+  * A07:2021 Cross-Site Scripting (XSS): Input sanitization (planned)
+
+Industry Standards (Planned):
+- SOC 2 Type II: Security, availability, confidentiality
+- ISO 27001: Information Security Management
+- CERT-IN Guidelines: Indian Computer Emergency Response Team
+
+Government Requirements:
+- Data Localization: Consider data residency requirements
+- Aadhaar Integration: If identity verification needed (future)
+- Government Compliance Portal: Reporting requirements (if applicable)
+
+
+SECURITY VULNERABILITIES & KNOWN RISKS:
+
+Current High-Risk Issues:
+
+1. JWT Secret Key Hardcoded
+   Location: backend/main.py, line with SECRET_KEY = "supersecretkey"
+   Risk: Security breach if code is exposed
+   Impact: Attackers can forge valid tokens
+   Mitigation: IMMEDIATE - Move to environment variable
+
+2. Stored Credentials Visible in .env
+   Risk: Git exposure if accidentally committed
+   Impact: Database access compromise
+   Mitigation: Ensure .env is in .gitignore, use secrets management
+
+3. Token Storage in localStorage
+   Risk: XSS attacks can steal tokens
+   Impact: Session hijacking
+   Mitigation: Implement httpOnly cookies or token refresh mechanism
+
+4. No Input Validation
+   Risk: SQL injection, XSS attacks
+   Impact: Data breach, malicious code execution
+   Mitigation: Add server-side validation, parameterized queries
+
+5. No HTTPS in Development
+   Risk: Man-in-the-middle attacks
+   Impact: Credential interception
+   Mitigation: Use HTTPS in production, mkcert for dev
+
+6. No Rate Limiting
+   Risk: Brute force attacks, DDoS
+   Impact: Account compromise, service unavailability
+   Mitigation: Implement rate limiting on login endpoint
+
+7. No Request Validation
+   Risk: Malformed requests cause crashes
+   Impact: Service disruption
+   Mitigation: Add request schema validation
+
+Medium-Risk Issues:
+
+- No CORS validation (only wildcard CORS configured)
+- No session timeout enforcement
+- Minimal error handling (could leak system information)
+- No logging of security events
+- No backup/disaster recovery plan
+
+Future Security Improvements:
+- Implement OAuth 2.0 for social login
+- Add Web Application Firewall (WAF)
+- Implement Content Security Policy (CSP)
+- Add Two-Factor Authentication (2FA)
+- Regular security audits
+- Bug bounty program
+
+
+================================================================================
+8. CURRENT STATUS AND ROADMAP
+================================================================================
+
+CURRENT DEVELOPMENT STAGE: MVP (Minimum Viable Product)
+
+Completion Status:
+- Frontend: 60% complete
+  * Landing page and basic navigation ✓
+  * Scheme catalog with basic filtering ✓
+  * User authentication UI ✓
+  * Dashboard skeleton ✓
+  * AI Bot UI skeleton (no backend integration) ✓
+  * Knowledge bank placeholder ✓
+
+- Backend: 30% complete
+  * User signup/login endpoints ✓
+  * JWT authentication ✓
+  * Password hashing ✓
+  * Database connection ✓
+  * Minimal error handling
+  * No profile management endpoints
+  * No scheme management endpoints
+
+- Database: 20% complete
+  * Users table ✓
+  * Scheme data (JSON file) ✓
+  * Missing: user profiles, preferences, saved items
+
+- AI/ML Features: 5% complete
+  * UI skeleton only ✓
+  * No backend integration
+  * No LLM connection
+  * No recommendation engine
+
+- DevOps/Deployment: 10% complete
+  * Development environment setup ✓
+  * Version control ✓
+  * No CI/CD pipeline
+  * No containerization
+  * No production deployment
+
+- Testing: 5% complete
+  * Manual testing only
+  * No automated tests
+  * No test infrastructure
+
+- Documentation: 50% complete
+  * Code comments minimal
+  * README files mostly empty
+  * API documentation missing
+  * Architecture documentation (this document) ✓
+
+
+KNOWN LIMITATIONS & TECHNICAL DEBT:
+
+Critical Issues:
+1. JWT secret key hardcoded in source code
+2. No input validation or sanitization
+3. No rate limiting on sensitive endpoints
+4. Missing error handling on API endpoints
+5. No tests or CI/CD pipeline
+
+Major Missing Features:
+1. AI bot backend integration (planned placeholder only)
+2. Profile management endpoints
+3. Scheme recommendation system
+4. User preferences storage
+5. Saved schemes/bookmarks
+6. Search functionality
+7. Pagination on scheme listing
+8. Admin panel for scheme management
+9. Email notifications
+10. User analytics
+
+Code Quality Issues:
+1. Inconsistent error handling
+2. Missing input validation
+3. No request/response logging
+4. Mixed concerns in route handlers
+5. Database queries not optimized
+6. Frontend components could be more modular
+
+Performance Issues:
+1. No database query optimization
+2. No caching implemented
+3. Frontend bundle size not analyzed
+4. Image optimization needed
+5. API response times not monitored
+
+Documentation Gaps:
+1. API documentation (Swagger/OpenAPI)
+2. Database schema documentation
+3. Deployment procedures
+4. Development environment setup guide
+5. Component documentation
+6. Architecture decisions not documented
+
+Scalability Issues:
+1. Single Flask instance
+2. No load balancing
+3. No API rate limiting
+4. No database connection pooling
+5. No caching layer
+6. Frontend assets not on CDN
+
+
+PLANNED FUTURE ENHANCEMENTS:
+
+Phase 1 (Next 2-3 months - Core Feature Completion):
+- Backend API Completion:
+  * User profile management endpoints (GET, PUT, DELETE)
+  * Scheme CRUD endpoints
+  * Scheme filtering and search API
+  * User preferences storage
+  * Saved schemes management
+
+- AI Bot Integration:
+  * Connect to OpenAI API or similar LLM
+  * Implement roadmap generation
+  * Implement scheme recommendations
+  * Cache AI responses
+
+- Frontend Enhancement:
+  * Complete dashboard functionality
+  * Add scheme filtering UI improvements
+  * Implement user profile management
+  * Add saved schemes view
+  * Improve mobile responsiveness
+
+- Quality & Security:
+  * Add input validation (frontend & backend)
+  * Implement rate limiting
+  * Add comprehensive error handling
+  * Move secrets to environment variables
+  * Add request/response logging
+
+Phase 2 (3-6 months - Production Readiness):
+- Testing Infrastructure:
+  * Write unit tests for backend (pytest)
+  * Write unit tests for frontend (Vitest)
+  * Integration tests for API
+  * E2E tests (Playwright/Cypress)
+  * Achieve 80%+ code coverage
+
+- DevOps & Deployment:
+  * Containerize backend (Docker)
+  * Set up CI/CD pipeline (GitHub Actions)
+  * Deploy to staging environment
+  * Deploy to production
+  * Set up monitoring and alerting
+  * Implement automated backups
+
+- Documentation:
+  * API documentation (Swagger/OpenAPI)
+  * Database schema documentation
+  * Deployment guide
+  * Development setup guide
+  * User documentation
+
+- Performance Optimization:
+  * Optimize database queries
+  * Implement caching (Redis)
+  * Optimize frontend bundle size
+  * Set up CDN for static assets
+  * Monitor and improve Core Web Vitals
+
+Phase 3 (6-12 months - Growth & Analytics):
+- User Analytics:
+  * Track user behavior
+  * Analyze feature adoption
+  * Measure scheme recommendations accuracy
+  * User feedback collection
+
+- Advanced AI Features:
+  * Fine-tune models based on user data
+  * Implement collaborative filtering
+  * Add personalized learning paths
+  * Natural language scheme search
+
+- Mobile Experience:
+  * Evaluate native mobile apps
+  * Progressive Web App (PWA) features
+  * Mobile-specific optimizations
+
+- Government Integration:
+  * Integrate with government scheme APIs
+  * Real-time scheme availability
+  * Direct scheme application submission (future)
+  * Integration with payment gateways (for fees if any)
+
+- Community Features:
+  * User forums/discussions
+  * Mentor-mentee connections
+  * Startup showcase
+  * Peer learning groups
+
+- Scalability Improvements:
+  * Multi-region deployment
+  * Database sharding
+  * Microservices architecture (if needed)
+  * Load testing and optimization
+
+Phase 4 (12+ months - Expansion):
+- Geographic Expansion:
+  * Multi-language support (Hindi, regional languages)
+  * Localized scheme information
+  * Regional mentor network
+
+- Monetization (If Applicable):
+  * Premium features
+  * Sponsored content
+  * Partnership programs
+  * B2B platform for corporates
+
+- Advanced Analytics:
+  * Predictive analytics for startup success
+  * Market intelligence
+  * Industry benchmarking
+
+
+ROADMAP TIMELINE:
+
+Q1 2025 (Jan-Mar):
+- Complete core backend API
+- Integrate AI bot with LLM
+- Add comprehensive error handling
+- Security hardening
+- Move to staging environment
+
+Q2 2025 (Apr-Jun):
+- Write unit and integration tests
+- Set up CI/CD pipeline
+- Performance optimization
+- Initial production deployment
+
+Q3 2025 (Jul-Sep):
+- User feedback collection
+- Analytics implementation
+- Feature refinement
+- Scale testing
+
+Q4 2025 (Oct-Dec):
+- Mobile app exploration
+- Government API integration
+- Community features
+- Year-end review and planning
+
+Risk Factors:
+- AI/LLM integration complexity
+- Government API availability/reliability
+- User adoption rates
+- Team capacity constraints
+- Technical debt accumulation
+- Competitive landscape changes
+
+
+================================================================================
+9. HOW ChatGPT SHOULD USE THIS CONTEXT
+================================================================================
+
+EXPECTED TYPES OF ASSISTANCE:
+
+Code Implementation:
+- Generating new features or components
+- Refactoring existing code
+- Fixing bugs or errors
+- Code review and suggestions
+- Implementation best practices
+- Design patterns application
+
+Architecture & Design:
+- System design reviews
+- Technology selection recommendations
+- Scaling strategies
+- Data modeling
+- API design
+- Security architecture
+
+Debugging & Troubleshooting:
+- Error analysis and root cause identification
+- Performance issues
+- Database query optimization
+- Integration problems
+- Environment setup issues
+
+Documentation:
+- Writing API documentation
+- Creating architecture diagrams (ASCII or description)
+- Component documentation
+- Setup and deployment guides
+- README improvements
+
+Testing & Quality:
+- Test case design
+- Testing strategy recommendations
+- Performance testing
+- Security testing approaches
+
+DevOps & Infrastructure:
+- Docker/containerization setup
+- CI/CD pipeline design
+- Deployment strategies
+- Monitoring and logging setup
+
+AI/ML Features:
+- LLM integration guidance
+- Prompt engineering
+- Model selection recommendations
+- RAG (Retrieval Augmented Generation) design
+- Fine-tuning strategies
+
+
+PREFERRED RESPONSE STYLE & DETAIL LEVEL:
+
+General Guidelines:
+- Be specific and practical (not theoretical)
+- Provide working code examples when relevant
+- Consider the existing tech stack and patterns
+- Reference relevant files/components
+- Explain trade-offs when making recommendations
+- Ask clarifying questions if context is ambiguous
+
+Code Response Format:
+- Include language identifier (python, tsx, javascript)
+- Show complete code blocks (not pseudocode)
+- Include necessary imports and dependencies
+- Add comments for complex logic
+- Provide usage examples
+
+Documentation Response Format:
+- Use clear headings and structured bullet points
+- Include relevant code snippets
+- Provide before/after comparisons when applicable
+- Link related sections
+
+Technical Explanation Format:
+- Start with high-level overview
+- Drill down to implementation details
+- Include diagrams (ASCII if needed)
+- Provide concrete examples from the codebase
+- Mention performance/security implications
+
+Error/Bug Response Format:
+- Identify root cause
+- Explain why it occurs
+- Provide solution with code
+- Suggest preventive measures
+- Reference similar known issues
+
+
+SPECIFIC CONTEXT CLUES FOR BETTER ASSISTANCE:
+
+Frontend Development:
+- Mention "React/TypeScript" for frontend code
+- Reference components in "src/components/"
+- Consider React Query for API state management
+- Use shadcn-ui components as primary UI library
+- Apply Tailwind CSS for styling
+- Use Framer Motion for animations when appropriate
+
+Backend Development:
+- Mention "Python/Flask" for backend code
+- Reference existing patterns in "backend/main.py"
+- Use psycopg2 for PostgreSQL
+- Implement JWT for authentication
+- Use bcrypt for password hashing
+- Follow REST API conventions
+
+Database:
+- Primary: PostgreSQL on Azure
+- Mention "psycopg2" when suggesting DB code
+- Remember SSL mode required
+- Design for future scaling
+
+AI/ML Features:
+- Consider OpenAI API as primary LLM
+- Design for streaming responses if applicable
+- Include error handling for API failures
+- Plan for cost optimization
+- Consider caching strategies
+
+
+QUESTIONS TO CLARIFY AMBIGUOUS REQUESTS:
+
+When Unclear, Ask:
+1. "Is this for frontend or backend implementation?"
+2. "Should this integrate with existing user authentication?"
+3. "What's the priority - speed, maintainability, or performance?"
+4. "Is this a new feature or modification to existing component?"
+5. "What's the expected data volume or scale?"
+6. "Should this be exposed as public API or internal only?"
+7. "Are there specific security considerations?"
+8. "Do you need backward compatibility?"
+
+Context-Specific Questions:
+- "Should this use React Query for state management?"
+- "Does this require database changes?"
+- "Should this be added to the AI bot feature?"
+- "Does this affect protected routes?"
+- "Should this integrate with the scheme database?"
+
+
+CONSTRAINTS & LIMITATIONS TO CONSIDER:
+
+Technical Constraints:
+- Python 3.11+ required
+- Node.js/npm or bun for frontend
+- PostgreSQL as primary database
+- Flask as backend framework (not FastAPI or Django)
+- React/TypeScript for frontend (not Vue or Svelte)
+- Tailwind CSS (not Bootstrap or styled-components)
+
+Known Issues to Work Around:
+- JWT secret is hardcoded (needs migration to .env)
+- No rate limiting implemented yet
+- localStorage used for token (XSS risk)
+- No comprehensive error handling
+- Limited input validation
+- No automated tests
+
+Architecture Patterns:
+- REST API pattern (not GraphQL)
+- Stateless backend (JWT, no sessions)
+- Component-based frontend architecture
+- JSON data exchange format
+- Single responsibility principle in components
+
+Performance Considerations:
+- Consider single Flask instance limitation
+- Database query optimization important
+- Frontend bundle size matters
+- Cache strategy needed
+- Response time targets: < 3 seconds
+
+
+INFORMATION NOT FULLY SPECIFIED:
+
+When context is missing, make reasonable assumptions aligned with:
+- Best practices for the technology stack
+- Scalability requirements for typical startup platform
+- Security standards for financial/personal data
+- Accessibility standards (WCAG 2.1 AA target)
+- Performance standards (Lighthouse 90+)
+- Common patterns in similar platforms
+
+Document assumptions made and suggest clarification with team.
+
+
+CRITICAL REMINDERS FOR CONTEXT USAGE:
+
+1. SECURITY FIRST
+   - Never ignore security implications
+   - Assume sensitive data involved
+   - Implement proper authentication/authorization
+   - Recommend hardening for production
+
+2. DATA CONSISTENCY
+   - Verify frontend-backend data alignment
+   - Check database schema implications
+   - Consider data migration strategies
+   - Plan for data validation
+
+3. USER EXPERIENCE
+   - Consider mobile experience
+   - Plan for error states
+   - Design intuitive workflows
+   - Test accessibility
+
+4. SCALABILITY
+   - Code for growth (not just immediate needs)
+   - Design for horizontal scaling
+   - Plan for database optimization
+   - Consider caching strategies
+
+5. MAINTAINABILITY
+   - Follow consistent code patterns
+   - Document complex logic
+   - Plan for future developers
+   - Refactor when technical debt accumulates
+
+6. COMPLIANCE
+   - Consider data privacy implications
+   - Follow government guidelines where applicable
+   - Audit for OWASP vulnerabilities
+   - Document security measures
+
+
+================================================================================
+                                END OF DOCUMENT
+================================================================================
+
+DOCUMENT STATISTICS:
+- Total Sections: 9
+- Total Pages (approx): 25-30 when printed
+- Word Count: ~15,000+
+- Last Updated: December 2025
+- Prepared For: ChatGPT and AI Code Assistants
+
+NEXT STEPS FOR USING THIS DOCUMENT:
+1. Share this document with ChatGPT/Claude as initial context
+2. Refer to specific section numbers when asking for help
+3. Update this document as project evolves
+4. Use for onboarding new team members
+5. Reference for architecture reviews
+6. Update quarterly or after major changes
+
+DOCUMENT MAINTENANCE:
+- Review every sprint for accuracy
+- Update roadmap as plans change
+- Record completed milestones
+- Add new technical decisions
+- Update security considerations
+- Track resolved technical debt
+- Remove or update known limitations when fixed
+
+================================================================================
