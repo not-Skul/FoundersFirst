@@ -21,7 +21,7 @@ const Auth = () => {
     password: "",
   });
 //i have made changes in the handlesubmit function and added backend api's to it 
-  const handleSubmit = async (e: React.FormEvent) => {
+ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsLoading(true);
 
@@ -45,19 +45,24 @@ const Auth = () => {
 
     const res = await axios.post(url, payload);
 
-if (res.data.token) {
-  localStorage.setItem("token", res.data.token);
-}
+    sessionStorage.clear();
 
-navigate("/dashboard");
+    if (mode === "login" && res.data.token) {
+      localStorage.setItem("token", res.data.token);
+    
+      window.dispatchEvent(new Event("auth-change"));
 
-  } catch (error: any) {
-    toast({
-      title: "Authentication failed",
-      description:
-        error.response?.data?.message || "Something went wrong",
-      variant: "destructive",
-    });
+      navigate("/dashboard");
+    }
+
+
+    if (mode === "signup") {
+      navigate("/auth?mode=login");
+    }
+
+  } catch (error) {
+    console.error("Auth error:", error);
+    alert("Invalid credentials or server error");
   } finally {
     setIsLoading(false);
   }

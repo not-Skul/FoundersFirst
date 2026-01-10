@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Sparkles, ArrowRight, User, Bot, Loader2 } from "lucide-react";
+import axios from "axios";
 
 interface Message {
   role: "user" | "assistant";
@@ -33,68 +34,79 @@ const AIBot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStep("chat");
-    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages([
-        {
-          role: "assistant",
-          content: `Great! I've analyzed your startup idea: "${formData.idea}". Based on your profile (${formData.gender}, ${formData.age} years old, ${formData.category} category from ${formData.location}), I've created a personalized roadmap for you.`,
-        },
-      ]);
-      setRoadmap([
-        {
-          phase: 1,
-          title: "Validation & Research",
-          description: "Validate your idea and understand the market",
-          tasks: [
-            "Conduct market research in your target segment",
-            "Interview 20+ potential customers",
-            "Analyze competitors in the space",
-            "Define your unique value proposition",
-          ],
-        },
-        {
-          phase: 2,
-          title: "MVP Development",
-          description: "Build your minimum viable product",
-          tasks: [
-            "Define core features for MVP",
-            "Choose technology stack",
-            "Build prototype in 4-6 weeks",
-            "Get early feedback from beta users",
-          ],
-        },
-        {
-          phase: 3,
-          title: "Go-to-Market",
-          description: "Launch and acquire your first customers",
-          tasks: [
-            "Create marketing strategy",
-            "Set up social media presence",
-            "Launch on Product Hunt / relevant platforms",
-            "Implement referral program",
-          ],
-        },
-        {
-          phase: 4,
-          title: "Scale & Funding",
-          description: "Grow your startup and seek funding",
-          tasks: [
-            "Apply for relevant government schemes",
-            "Prepare pitch deck",
-            "Connect with angel investors",
-            "Explore incubators and accelerators",
-          ],
-        },
-      ]);
-      setIsLoading(false);
-    }, 2000);
-  };
+const handleFormSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  setIsLoading(true);
+
+  try {
+   
+    await axios.post("http://localhost:5000/roadmap_genration_form", {
+      user_id: 1,
+      startup_idea: formData.idea,
+      age: Number(formData.age),
+      gender: formData.gender,
+      category: formData.category,
+      location: formData.location,
+      funding_status: formData.fundingStatus,
+    });
+
+    
+    setStep("chat");
+
+  
+    setMessages([
+      {
+        role: "assistant",
+        content: `Great! I've analyzed your startup idea: "${formData.idea}". Based on your profile (${formData.gender}, ${formData.age} years old, ${formData.category} category from ${formData.location}), I've created a personalized roadmap for you.`,
+      },
+    ]);
+
+   
+    setRoadmap([
+      {
+        phase: 1,
+        title: "Validation & Research",
+        description: "Validate your idea and understand the market",
+        tasks: [
+          "Conduct market research in your target segment",
+          "Interview 20+ potential customers",
+          "Analyze competitors in the space",
+          "Define your unique value proposition",
+        ],
+      },
+      {
+        phase: 2,
+        title: "MVP Development",
+        description: "Build your minimum viable product",
+        tasks: [
+          "Define core features for MVP",
+          "Choose technology stack",
+          "Build prototype in 4-6 weeks",
+          "Get early feedback from beta users",
+        ],
+      },
+      {
+        phase: 3,
+        title: "Go-to-Market",
+        description: "Launch and acquire your first customers",
+        tasks: [
+          "Create marketing strategy",
+          "Set up social media presence",
+          "Launch on relevant platforms",
+          "Implement referral program",
+        ],
+      },
+    ]);
+  } catch (error) {
+    console.error("Error submitting form:", error);
+    alert("Something went wrong while submitting the form");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;

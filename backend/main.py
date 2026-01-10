@@ -15,6 +15,39 @@ CORS(app)
 bcrypt = Bcrypt(app)
 
 
+@app.route("/roadmap_genration_form" , methods = ["POST"])
+def roadmap_genration_form():
+    data = request.json 
+    user_id = data["user_id"]
+    startup_idea = data["startup_idea"]
+    age = data["age"]
+    gender = data["gender"]
+    category = data["category"]
+    location = data["location"]
+    funding_status = data["funding_status"]
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO startup_forms
+        (user_id, startup_idea, age, gender, category, location, funding_status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """, (
+        user_id,
+        startup_idea,
+        age,
+        gender,
+        category,
+        location,
+        funding_status
+    ))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return ({"message" : "startup form sunmitted successfully"}), 201
+
+
 #signup api where all the three variables fetching data from the data which is requested by the frontend and simply saving the data into the database.
 @app.route("/signup", methods=["POST"])
 def signup():
@@ -48,7 +81,7 @@ def signup():
 #and then check the database for the same and if they match it will allow you otherwise give you error
 
 
-SECRET_KEY = "supersecretkey"  # move to .env later
+SECRET_KEY = "supersecretkey"  
 
 @app.route("/login", methods=["POST"])
 def login():
