@@ -1,21 +1,17 @@
 from mongo import collection
-from sentence_transformers import SentenceTransformer
-from langchain_google_genai import GoogleGenerativeAI
-from langchain_ollama import OllamaEmbeddings
+from langchain_google_genai import GoogleGenerativeAI,GoogleGenerativeAIEmbeddings
 
-# Download from the 🤗 Hub
-# model = SentenceTransformer("google/embeddinggemma-300m")
-model = OllamaEmbeddings(model="embeddinggemma:300m")
+model = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001",output_dimensionality=768)
 llm = GoogleGenerativeAI(model="gemini-2.5-flash-lite")
 # Run inference with queries and documents
 async def generate_embedding(text):
-    embedding = await model.embed_query(text)
+    embedding = model.embed_query(text)
     return embedding
 
 async def get_query_results(query):
   """Gets results from a vector search query."""
 
-  query_embedding = generate_embedding(query)
+  query_embedding = await generate_embedding(query)
   print(query_embedding)
   pipeline = [
       {
@@ -34,7 +30,7 @@ async def get_query_results(query):
       }
   ]
 
-  results = await collection.aggregate(pipeline)
+  results = collection.aggregate(pipeline)
   print(results)
 
   array_of_results = []
@@ -44,7 +40,7 @@ async def get_query_results(query):
 
 
 async def final_answer(query):
-    context_docs = get_query_results(query)
+    context_docs = await get_query_results(query)
     context_string = " ".join([doc["text"] for doc in context_docs])
 
     prompt = f"""Use the following pieces of context to answer the question at the end.
@@ -56,7 +52,7 @@ async def final_answer(query):
 
 
 async def final_roadmap_answer(query):
-    context_docs = get_query_results(query)
+    context_docs = await get_query_results(query)
     context_string = " ".join([doc["text"] for doc in context_docs])
 
     prompt = f"""
@@ -114,5 +110,5 @@ Add additional phases if necessary (e.g., Iteration, Scaling, Fundraising).
 
 Keep task descriptions concise and action-focused."""
     
-    result = await llm.invoke(prompt)
+    result = llm.invoke(prompt)
     return result
