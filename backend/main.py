@@ -46,7 +46,10 @@ def roadmap_genration_form():
     conn.commit()
     cur.close()
     conn.close()
-    return ({"message" : "startup form sunmitted successfully"}), 201
+
+    ##hitting roadmap api endpoint of ai-backend
+    roadmap_response = requests.get(AI_Backend_URL + f"/roadmap/{startup_idea}")
+    return ({"message" : f"startup form submitted successfully and the roadmap is {roadmap_response.json()} "}), 201
 
 @app.route("/test",methods = ["GET"])
 def testapi():
