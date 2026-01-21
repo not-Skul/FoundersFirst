@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import json
 from dotenv import load_dotenv
 from rag import final_answer, final_roadmap_answer
 
@@ -23,8 +24,11 @@ async def get_rag_response(query: str):
         "response": response
     }
 
-@app.get("/roadmap/{query}")
+@app.get("/roadmap/")
 async def get_roadmap_response(query: str):
+    query = query.replace("%20", " ")
+    res = json.loads(query['response'][8:-4])
+    print("Received roadmap query:", query)
     response = await final_roadmap_answer(query)
     return {
         "status": "success",
