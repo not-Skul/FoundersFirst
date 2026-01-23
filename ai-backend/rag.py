@@ -47,7 +47,7 @@ async def final_answer(query):
         {context_string}
         Question: {query}
     """
-    result = await llm.invoke(prompt)
+    result = llm.invoke(prompt)
     return result
 
 
@@ -72,10 +72,10 @@ Each phase should include a concise goal and concrete tasks.
 Output Format (strictly follow this structure):
 
 {{
-  "phase": '1',
-  "title": "Validation & Research",
-  "description": "Validate your idea and understand the market",
-  "tasks": [
+  phase: '1',
+  title: "Validation & Research",
+  description: "Validate your idea and understand the market",
+  tasks: [
     "Conduct market research in your target segment",
     "Interview 20+ potential customers",
     "Analyze competitors in the space",
@@ -83,10 +83,10 @@ Output Format (strictly follow this structure):
   ]
 }},
 {{
-  "phase": '2',
-  "title": "MVP Development",
-  "description": "Build your minimum viable product",
-  "tasks": [
+  phase: '2',
+  title: "MVP Development",
+  description: "Build your minimum viable product",
+  tasks: [
     "Define core features for MVP",
     "Choose technology stack",
     "Build prototype in 4–6 weeks",
@@ -94,10 +94,10 @@ Output Format (strictly follow this structure):
   ]
 }},
 {{
-  "phase": '3',
-  "title": "Go-to-Market",
-  "description": "Launch and acquire your first customers",
-  "tasks": [
+  phase: '3',
+  title: "Go-to-Market",
+  description: "Launch and acquire your first customers",
+  tasks: [
     "Create marketing strategy",
     "Set up social media presence",
     "Launch on relevant platforms",

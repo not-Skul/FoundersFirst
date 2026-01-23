@@ -1,0 +1,9 @@
+.env
+.gitignore
+central_schemes.txt
+json_to_txt.ipynb
+rag.ipynb
+README.md
+schemes_structured_documents.json
+scraper.py
+uv.lock

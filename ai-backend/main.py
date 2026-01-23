@@ -27,7 +27,7 @@ async def get_rag_response(query: str):
 @app.get("/roadmap/")
 async def get_roadmap_response(query: str):
     query = query.replace("%20", " ")
-    res = json.loads(query['response'][8:-4])
+    # res = json.loads(query['response'][8:-4])
     print("Received roadmap query:", query)
     response = await final_roadmap_answer(query)
     return {
