@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 import jwt
 import datetime
 import requests
+import json
+import re
+from urllib.parse import quote
 
 #for loading .env file
 load_dotenv()
@@ -46,14 +49,11 @@ def roadmap_genration_form():
     conn.commit()
     cur.close()
     conn.close()
-
-    ##hitting roadmap api endpoint of ai-backend
-    roadmap_response = requests.get(AI_Backend_URL + f"/roadmap/{startup_idea}")
-    return ({"message" : f"startup form submitted successfully and the roadmap is {roadmap_response.json()} "}), 201
+    return ({"message" : "startup form sunmitted successfully"}), 201
 
 @app.route("/test",methods = ["GET"])
 def testapi():
-    data= requests.get(AI_Backend_URL + "/test")
+    data= requests.get("https://aibackend.thankfulriver-53eeedbe.southeastasia.azurecontainerapps.io" + "/test")
     return jsonify(data.json()), 200
 
 #signup api where all the three variables fetching data from the data which is requested by the frontend and simply saving the data into the database.
@@ -122,6 +122,50 @@ def login():
 
     return jsonify({"message": "Invalid password"}), 401
 
+
+@app.route("/chat_with_roadmap", methods=["POST"])
+def chat_simple():
+    data = request.json
+    message = data["message"]
+    context = data.get("context", "")
+
+    final_prompt = f"""
+    Roadmap Summary:
+    {context}
+
+    User Question:
+    {message}
+    """
+
+    encoded = quote(final_prompt)
+
+    url = "https://aibackend.thankfulriver-53eeedbe.southeastasia.azurecontainerapps.io/rag/" + encoded
+
+    ai = requests.get(url, timeout=60)
+
+    return jsonify(ai.json())
+
+@app.route("/generate_roadmap", methods=["POST"])
+def generate_roadmap():
+    data = request.json
+    query = data["query"]
+
+    ai = requests.get(
+        "https://aibackend.thankfulriver-53eeedbe.southeastasia.azurecontainerapps.io/roadmap/",
+        params={"query": query},
+        timeout=60
+    )
+
+    raw = ai.json()              
+    text = raw["response"]      
+
+    clean = re.sub(r"```json|```", "", text).strip()
+
+    clean = re.sub(r"'(\d+)'", r"\1", clean)
+
+    roadmap = json.loads(clean)
+
+    return jsonify({"roadmap": roadmap}), 200
 
 if __name__ == "__main__":
     app.run(debug=True)

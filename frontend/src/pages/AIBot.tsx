@@ -33,15 +33,18 @@ const AIBot = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
+  const [roadmapContext, setRoadmapContext] = useState("");
 
+const createSummary = (roadmap: RoadmapPhase[]) => {
+  return roadmap.map(p => `Phase ${p.phase}: ${p.title}`).join(". ");
+};
 
 const handleFormSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-
   setIsLoading(true);
 
   try {
-   
+    // Save form
     await axios.post("http://localhost:5000/roadmap_genration_form", {
       user_id: 1,
       startup_idea: formData.idea,
@@ -52,81 +55,72 @@ const handleFormSubmit = async (e: React.FormEvent) => {
       funding_status: formData.fundingStatus,
     });
 
-    
+    // Call AI roadmap
+    const aiRes = await axios.post("http://localhost:5000/generate_roadmap", {
+      query: `I am ${formData.age} years old ${formData.gender}. 
+      I want to build ${formData.idea}. 
+      My category is ${formData.category}, 
+      located in ${formData.location}. 
+      Funding status: ${formData.fundingStatus}.`
+    });
+
+    // Set roadmap from AI
+    setRoadmap(aiRes.data.roadmap);
+
+    const summary = createSummary(aiRes.data.roadmap);
+setRoadmapContext(summary);
+
+    //Switch to chat
     setStep("chat");
 
-  
     setMessages([
       {
         role: "assistant",
-        content: `Great! I've analyzed your startup idea: "${formData.idea}". Based on your profile (${formData.gender}, ${formData.age} years old, ${formData.category} category from ${formData.location}), I've created a personalized roadmap for you.`,
+        content: `Your personalized roadmap is ready based on your idea: "${formData.idea}".`,
       },
     ]);
 
-   
-    setRoadmap([
-      {
-        phase: 1,
-        title: "Validation & Research",
-        description: "Validate your idea and understand the market",
-        tasks: [
-          "Conduct market research in your target segment",
-          "Interview 20+ potential customers",
-          "Analyze competitors in the space",
-          "Define your unique value proposition",
-        ],
-      },
-      {
-        phase: 2,
-        title: "MVP Development",
-        description: "Build your minimum viable product",
-        tasks: [
-          "Define core features for MVP",
-          "Choose technology stack",
-          "Build prototype in 4-6 weeks",
-          "Get early feedback from beta users",
-        ],
-      },
-      {
-        phase: 3,
-        title: "Go-to-Market",
-        description: "Launch and acquire your first customers",
-        tasks: [
-          "Create marketing strategy",
-          "Set up social media presence",
-          "Launch on relevant platforms",
-          "Implement referral program",
-        ],
-      },
-    ]);
   } catch (error) {
-    console.error("Error submitting form:", error);
-    alert("Something went wrong while submitting the form");
+    console.error(error);
+    alert("AI roadmap generation failed");
   } finally {
     setIsLoading(false);
   }
 };
 
 
+
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  if (!inputMessage.trim()) return;
 
-    setMessages((prev) => [...prev, { role: "user", content: inputMessage }]);
-    setInputMessage("");
-    setIsLoading(true);
+  const userMsg = inputMessage;
 
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "That's a great question! Based on your startup journey, I recommend focusing on customer validation first. Would you like me to elaborate on any specific aspect of your roadmap?",
-        },
-      ]);
-      setIsLoading(false);
-    }, 1500);
-  };
+  setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+  setInputMessage("");
+  setIsLoading(true);
+
+  try {
+    const res = await axios.post("http://localhost:5000/chat_with_roadmap", {
+      message: userMsg,
+      context: roadmapContext
+    });
+
+    const aiText = res.data.response || "Sorry, I could not generate a reply.";
+
+    setMessages(prev => [
+      ...prev,
+      { role: "assistant", content: aiText }
+    ]);
+
+  } catch (err) {
+    setMessages(prev => [
+      ...prev,
+      { role: "assistant", content: "AI is not responding right now." }
+    ]);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
