@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Sparkles, ArrowRight, User, Bot, Loader2 } from "lucide-react";
 import axios from "axios";
+
+
 
 interface Message {
   role: "user" | "assistant";
@@ -29,11 +31,42 @@ const AIBot = () => {
     location: "",
     fundingStatus: "",
   });
+  const [isHydrating, setIsHydrating] = useState(true);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
   const [roadmapContext, setRoadmapContext] = useState("");
+
+   useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    setIsHydrating(false);
+    setStep("input");
+    return;
+  }
+
+  axios.get("http://localhost:5000/my-roadmap", {
+    headers: { Authorization: token }
+  })
+  .then(res => {
+    if (res.data.roadmap && res.data.roadmap.length > 0) {
+      setRoadmap(res.data.roadmap);
+      setStep("chat");
+
+      const summary = createSummary(res.data.roadmap);
+      setRoadmapContext(summary);
+    } else {
+      setStep("input");
+    }
+  })
+  .catch(() => setStep("input"))
+  .finally(() => setIsHydrating(false)); // 👈 important
+}, []);
+
+
 
 const createSummary = (roadmap: RoadmapPhase[]) => {
   return roadmap.map(p => `Phase ${p.phase}: ${p.title}`).join(". ");
@@ -56,13 +89,24 @@ const handleFormSubmit = async (e: React.FormEvent) => {
     });
 
     // Call AI roadmap
-    const aiRes = await axios.post("http://localhost:5000/generate_roadmap", {
-      query: `I am ${formData.age} years old ${formData.gender}. 
-      I want to build ${formData.idea}. 
-      My category is ${formData.category}, 
-      located in ${formData.location}. 
-      Funding status: ${formData.fundingStatus}.`
-    });
+    const token = localStorage.getItem("token");
+
+const aiRes = await axios.post(
+  "http://localhost:5000/generate_roadmap",
+  {
+    query: `I am ${formData.age} years old ${formData.gender}. 
+    I want to build ${formData.idea}. 
+    My category is ${formData.category}, 
+    located in ${formData.location}. 
+    Funding status: ${formData.fundingStatus}.`
+  },
+  {
+    headers: {
+      Authorization: token
+    }
+  }
+);
+
 
     // Set roadmap from AI
     setRoadmap(aiRes.data.roadmap);
@@ -121,6 +165,15 @@ setRoadmapContext(summary);
     setIsLoading(false);
   }
 };
+
+if (isHydrating) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p className="text-muted-foreground">Loading your roadmap...</p>
+    </div>
+  );
+}
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

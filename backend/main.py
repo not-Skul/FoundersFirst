@@ -19,6 +19,17 @@ CORS(app)
 bcrypt = Bcrypt(app)
 AI_Backend_URL = "http://127.0.0.1:8001"
 
+def get_user_from_token():
+    token = request.headers.get("Authorization")
+    if not token:
+        return None
+    try:
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return decoded["user_id"]
+    except:
+        return None
+
+
 @app.route("/roadmap_genration_form" , methods = ["POST"])
 def roadmap_genration_form():
     data = request.json 
@@ -145,10 +156,45 @@ def chat_simple():
 
     return jsonify(ai.json())
 
+@app.route("/my-roadmap", methods=["GET"])
+def my_roadmap():
+    user_id = get_user_from_token()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT startup_idea, roadmap 
+        FROM roadmaps 
+        WHERE user_id = %s 
+        ORDER BY id DESC 
+        LIMIT 1
+    """, (user_id,))
+
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not row:
+        return jsonify({"roadmap": []})
+
+    return jsonify({
+        "startup_idea": row[0],
+        "roadmap": row[1]
+    })
+
 @app.route("/generate_roadmap", methods=["POST"])
 def generate_roadmap():
     data = request.json
+    # user_id = data.get("user_id", 1)
+    user_id = get_user_from_token()
+    print("USER_ID:", user_id)
+    if not user_id:
+         return jsonify({"error": "Unauthorized"}), 401
     query = data["query"]
+    startup_idea = data.get("startup_idea", "")
 
     ai = requests.get(
         "https://aibackend.thankfulriver-53eeedbe.southeastasia.azurecontainerapps.io/roadmap/",
@@ -156,16 +202,31 @@ def generate_roadmap():
         timeout=60
     )
 
-    raw = ai.json()              
-    text = raw["response"]      
+    raw = ai.json()
+    text = raw["response"]
 
     clean = re.sub(r"```json|```", "", text).strip()
-
     clean = re.sub(r"'(\d+)'", r"\1", clean)
 
     roadmap = json.loads(clean)
 
-    return jsonify({"roadmap": roadmap}), 200
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO roadmaps (user_id, startup_idea, roadmap)
+        VALUES (%s, %s, %s)
+        RETURNING id
+    """, (user_id, startup_idea, json.dumps(roadmap)))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({
+        "roadmap": roadmap
+    }), 200
+
 
 if __name__ == "__main__":
     app.run(debug=True)
