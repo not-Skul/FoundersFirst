@@ -70,15 +70,18 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         const response = await fetch('http://localhost:5000/user-profile', {
           headers: { 'Authorization': token }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           setProfile(prev => ({ ...prev, ...data }));
-        } else{
+        } else {
           localStorage.removeItem('token');
+          window.dispatchEvent(new Event('auth-change'));
         }
       } catch (error) {
         console.error('Failed to fetch user profile:', error);
+        localStorage.removeItem('token');
+        window.dispatchEvent(new Event('auth-change'));
       } finally {
         setIsLoading(false);
       }

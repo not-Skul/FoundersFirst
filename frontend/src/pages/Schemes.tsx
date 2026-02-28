@@ -1,105 +1,113 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { motion } from "framer-motion";
-import { Search, Filter, ExternalLink, Users, GraduationCap, MapPin, Wallet, Building } from "lucide-react";
+import { Search, Users, MapPin, Wallet, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import schemesData from "./schemes_structured_documents.json";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+
+interface Scheme {
+  scheme_name: string;
+  ministry: string;
+  key_sectors: string;
+  brief: string;
+  eligibility: string;
+  benefits: string;
+  benefit_tags: string;
+  tenure: string;
+  application_link: string;
+}
 
 const categories = [
   { id: "all", label: "All Schemes", icon: Building },
+  { id: "tech", label: "Technology", icon: Building },
   { id: "women", label: "Women", icon: Users },
-  { id: "student", label: "Students", icon: GraduationCap },
-  { id: "category", label: "SC/ST/OBC", icon: Building },
-  { id: "geography", label: "State-wise", icon: MapPin },
   { id: "funding", label: "Funding", icon: Wallet },
-];
-
-const schemes = [
-  {
-    id: 1,
-    name: "Startup India Seed Fund",
-    description: "Financial assistance for startups for proof of concept, prototype development, product trials, market entry, and commercialization.",
-    category: ["funding"],
-    eligibility: ["All categories", "Early stage startups"],
-    fundingAmount: "Up to ₹50 Lakhs",
-    link: "#",
-  },
-  {
-    id: 2,
-    name: "Stand Up India",
-    description: "Bank loans between ₹10 lakh and ₹1 Crore for SC, ST, and women entrepreneurs for greenfield enterprises.",
-    category: ["women", "category"],
-    eligibility: ["SC/ST/Women", "Greenfield projects"],
-    fundingAmount: "₹10 Lakh - ₹1 Crore",
-    link: "#",
-  },
-  {
-    id: 3,
-    name: "PMEGP - Prime Minister's Employment Generation Programme",
-    description: "Credit-linked subsidy scheme for generating employment opportunities through establishment of micro-enterprises.",
-    category: ["funding", "category"],
-    eligibility: ["All categories", "Manufacturing & Service sector"],
-    fundingAmount: "Up to ₹25 Lakhs",
-    link: "#",
-  },
-  {
-    id: 4,
-    name: "Women Entrepreneurship Platform (WEP)",
-    description: "NITI Aayog initiative to support aspiring and existing women entrepreneurs through incubation, funding, and mentorship.",
-    category: ["women"],
-    eligibility: ["Women entrepreneurs only"],
-    fundingAmount: "Varies",
-    link: "#",
-  },
-  {
-    id: 5,
-    name: "TIDE 2.0 - Technology Incubation and Development of Entrepreneurs",
-    description: "Support tech startups with grants for product development and commercialization.",
-    category: ["student", "funding"],
-    eligibility: ["Tech startups", "Incubated companies"],
-    fundingAmount: "Up to ₹50 Lakhs",
-    link: "#",
-  },
-  {
-    id: 6,
-    name: "Karnataka Startup Policy",
-    description: "State-specific incentives including reimbursement of patent costs, quality certification, and marketing expenses.",
-    category: ["geography"],
-    eligibility: ["Karnataka registered startups"],
-    fundingAmount: "Various incentives",
-    link: "#",
-  },
-  {
-    id: 7,
-    name: "Maharashtra State Innovation Society",
-    description: "Funding and mentorship support for innovative startups in Maharashtra.",
-    category: ["geography"],
-    eligibility: ["Maharashtra registered startups"],
-    fundingAmount: "Up to ₹30 Lakhs",
-    link: "#",
-  },
-  {
-    id: 8,
-    name: "Atal Innovation Mission - AIM",
-    description: "Support for students and young entrepreneurs through Atal Tinkering Labs and Atal Incubation Centers.",
-    category: ["student"],
-    eligibility: ["Students", "Young entrepreneurs"],
-    fundingAmount: "Up to ₹10 Crores for AIC",
-    link: "#",
-  },
+  { id: "msme", label: "MSME", icon: Building },
+  { id: "agri", label: "Agriculture", icon: MapPin },
 ];
 
 const Schemes = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSchemes, setSelectedSchemes] = useState<string[]>([]);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const checkLoginStatus = () => {
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+    };
+
+    // Initial check
+    checkLoginStatus();
+
+    // Listen for storage changes (login/logout in other tabs or same tab)
+    const handleStorageChange = () => {
+      checkLoginStatus();
+    };
+
+    // Listen for visibility changes (page comes back into focus)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkLoginStatus();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  const schemes: (Scheme & { id: string })[] = schemesData.map((scheme, index) => ({
+    ...scheme,
+    id: `scheme_${index}`,
+  }));
+
+  const getCategoryForScheme = (scheme: Scheme): string[] => {
+    const categories: string[] = [];
+    const text = `${scheme.scheme_name} ${scheme.brief} ${scheme.benefits} ${scheme.key_sectors}`.toLowerCase();
+
+    if (text.includes("technology") || text.includes("tech") || text.includes("software") || text.includes("digital")) categories.push("tech");
+    if (text.includes("women")) categories.push("women");
+    if (text.includes("funding") || text.includes("loan") || text.includes("financial") || text.includes("equity")) categories.push("funding");
+    if (text.includes("msme") || text.includes("micro") || text.includes("small")) categories.push("msme");
+    if (text.includes("agriculture") || text.includes("agri") || text.includes("farmer")) categories.push("agri");
+
+    return categories.length > 0 ? categories : ["all"];
+  };
 
   const filteredSchemes = schemes.filter((scheme) => {
-    const matchesCategory = activeCategory === "all" || scheme.category.includes(activeCategory);
-    const matchesSearch = scheme.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      scheme.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const schemeCategories = getCategoryForScheme(scheme);
+    const matchesCategory = activeCategory === "all" || schemeCategories.includes(activeCategory);
+    const matchesSearch = scheme.scheme_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      scheme.brief.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const handleSchemeSelect = (schemeId: string) => {
+    setSelectedSchemes((prev) =>
+      prev.includes(schemeId) ? prev.filter((id) => id !== schemeId) : [...prev, schemeId]
+    );
+  };
+
+  const getSelectedSchemeDetails = () => {
+    return schemes.filter((scheme) => selectedSchemes.includes(scheme.id));
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -152,6 +160,31 @@ const Schemes = () => {
               ))}
             </div>
 
+            {/* Comparison Button - Only visible if logged in */}
+            {isLoggedIn && selectedSchemes.length > 1 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-6 flex gap-3"
+              >
+                <Button
+                  onClick={() => setIsCompareOpen(true)}
+                  className="rounded-xl bg-primary hover:bg-primary/90"
+                >
+                  Compare {selectedSchemes.length} Schemes
+                </Button>
+                {selectedSchemes.length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedSchemes([])}
+                    className="rounded-xl"
+                  >
+                    Clear Selection
+                  </Button>
+                )}
+              </motion.div>
+            )}
+
             {/* Results */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredSchemes.map((scheme, index) => (
@@ -160,46 +193,68 @@ const Schemes = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="p-6 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-card transition-all group"
+                  className="p-6 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-card transition-all group relative"
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="font-semibold text-foreground text-lg group-hover:text-primary transition-colors">
-                      {scheme.name}
+                  {/* Selection Checkbox - Only for logged in users */}
+                  {isLoggedIn && (
+                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                      <Checkbox
+                        checked={selectedSchemes.includes(scheme.id)}
+                        onCheckedChange={() => handleSchemeSelect(scheme.id)}
+                        className="w-5 h-5"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-start justify-between mb-4 pr-8">
+                    <h3 className="font-semibold text-foreground text-lg group-hover:text-primary transition-colors line-clamp-2">
+                      {scheme.scheme_name}
                     </h3>
-                    <a
-                      href={scheme.link}
-                      className="p-2 rounded-lg hover:bg-secondary transition-colors"
-                    >
-                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                    </a>
                   </div>
 
                   <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
-                    {scheme.description}
+                    {scheme.brief}
                   </p>
 
                   <div className="space-y-3">
                     <div>
-                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Funding</span>
-                      <p className="text-sm font-semibold text-primary">{scheme.fundingAmount}</p>
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Ministry</span>
+                      <p className="text-sm font-semibold text-primary">{scheme.ministry}</p>
                     </div>
 
-                    <div>
-                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Eligibility</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {scheme.eligibility.map((item, i) => (
-                          <span
-                            key={i}
-                            className="px-2 py-1 text-xs rounded-full bg-secondary text-secondary-foreground"
-                          >
-                            {item}
-                          </span>
-                        ))}
+                    {scheme.benefit_tags && (
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Benefits</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {scheme.benefit_tags.split(",").slice(0, 2).map((tag, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-1 text-xs rounded-full bg-secondary text-secondary-foreground"
+                            >
+                              {tag.trim()}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
+
+                    {scheme.key_sectors && (
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sector</span>
+                        <p className="text-sm text-foreground">{scheme.key_sectors}</p>
+                      </div>
+                    )}
                   </div>
 
-                  <Button variant="subtle" className="w-full mt-4 rounded-xl">
+                  <Button
+                    variant="subtle"
+                    className="w-full mt-4 rounded-xl"
+                    onClick={() => {
+                      if (scheme.application_link && scheme.application_link !== "#") {
+                        window.open(scheme.application_link, "_blank");
+                      }
+                    }}
+                  >
                     Learn More
                   </Button>
                 </motion.div>
@@ -214,6 +269,89 @@ const Schemes = () => {
           </div>
         </section>
       </main>
+
+      {/* Comparison Modal */}
+      {isLoggedIn && (
+        <Dialog open={isCompareOpen} onOpenChange={setIsCompareOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Compare Schemes</DialogTitle>
+            </DialogHeader>
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-border">
+                    <th className="p-4 text-left font-semibold text-foreground w-48 sticky left-0 bg-background z-10">
+                      Scheme Name
+                    </th>
+                    {getSelectedSchemeDetails().map((scheme) => (
+                      <th
+                        key={scheme.id}
+                        className="p-4 text-left font-semibold text-foreground min-w-96 border-l border-border"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-semibold text-sm text-primary">
+                            {scheme.scheme_name}
+                          </h4>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: "Ministry", key: "ministry" },
+                    { label: "Key Sectors", key: "key_sectors" },
+                    { label: "Benefits", key: "benefit_tags" },
+                    { label: "Eligibility", key: "eligibility" },
+                    { label: "Tenure", key: "tenure" },
+                  ].map((row) => (
+                    <tr key={row.key} className="border-b border-border">
+                      <td className="p-4 font-semibold text-foreground sticky left-0 bg-background z-10 w-48 text-sm">
+                        {row.label}
+                      </td>
+                      {getSelectedSchemeDetails().map((scheme) => (
+                        <td
+                          key={scheme.id}
+                          className="p-4 text-sm text-muted-foreground border-l border-border min-w-96"
+                        >
+                          {(scheme as any)[row.key] || "Not specified"}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr className="border-b border-border bg-muted/30">
+                    <td className="p-4 font-semibold text-foreground sticky left-0 bg-muted/30 z-10 w-48 text-sm">
+                      Apply
+                    </td>
+                    {getSelectedSchemeDetails().map((scheme) => (
+                      <td
+                        key={scheme.id}
+                        className="p-4 border-l border-border min-w-96"
+                      >
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-lg"
+                          onClick={() => {
+                            if (scheme.application_link && scheme.application_link !== "#") {
+                              window.open(scheme.application_link, "_blank");
+                            }
+                          }}
+                        >
+                          Visit Link
+                        </Button>
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       <Footer />
     </div>
   );

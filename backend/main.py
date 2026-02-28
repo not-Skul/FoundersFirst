@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -100,7 +101,7 @@ def signup():
 #and then check the database for the same and if they match it will allow you otherwise give you error
 
 
-SECRET_KEY = "supersecretkey"  
+SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
 
 @app.route("/login", methods=["POST"])
 def login():

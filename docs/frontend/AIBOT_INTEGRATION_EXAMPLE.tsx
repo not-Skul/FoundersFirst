@@ -1,4 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+/**
+ * ENHANCED AIBOT.TSX - PRACTICAL INTEGRATION EXAMPLE
+ * 
+ * This shows how to integrate RoadmapContainer to replace the simple roadmap display
+ * with a full interactive roadmap system.
+ * 
+ * The example includes:
+ * - Step completion tracking
+ * - Expanded/collapsed phase management
+ * - Progress persistence
+ * - Scheme selection integration
+ */
+
+import React, { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,18 +19,19 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Sparkles, ArrowRight, User, Bot, Loader2 } from "lucide-react";
 import axios from "axios";
+
+// NEW IMPORTS
 import { RoadmapContainer } from "@/components/roadmap/RoadmapContainer";
-import { SchemeComparisonPanel } from "@/components/scheme-comparison/SchemeComparisonPanel";
+import { RoadmapPhase, RoadmapStep, RoadmapStatus } from "@/types";
 import { useSchemeComparison } from "@/contexts/SchemeComparisonContext";
-import { RoadmapPhase, RoadmapStatus } from "@/types";
-
-
+import { SchemeComparisonPanel } from "@/components/scheme-comparison/SchemeComparisonPanel";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
+// OLD FORMAT (from API) - for reference
 interface OldRoadmapPhase {
   phase: number;
   title: string;
@@ -26,39 +40,46 @@ interface OldRoadmapPhase {
 }
 
 /**
- * Convert old format roadmap from API to new format
+ * ========== CONVERSION FUNCTION ==========
+ * Converts old format roadmap from API to new format
  */
 function convertToNewRoadmapFormat(
   oldPhases: OldRoadmapPhase[],
   currentPhaseIndex: number = 0
 ): RoadmapPhase[] {
-  return oldPhases.map((oldPhase, index) => ({
-    phase: oldPhase.phase,
-    title: oldPhase.title,
-    description: oldPhase.description,
-    status: (
+  return oldPhases.map((oldPhase, index) => {
+    // Determine status: first phase is in-progress, rest are not-started
+    const status: RoadmapStatus =
       index < currentPhaseIndex
         ? "completed"
         : index === currentPhaseIndex
           ? "in_progress"
-          : "not_started"
-    ) as RoadmapStatus,
-    estimatedDuration: "2-4 weeks",
-    steps: oldPhase.tasks.map((task, taskIndex) => ({
-      id: `step_${oldPhase.phase}_${taskIndex}`,
-      title: task,
-      description: `Step for ${oldPhase.title}`,
-      status: "not_started" as RoadmapStatus,
-      priority: taskIndex === 0 ? "high" : "medium",
-      relatedSchemes: [],
-      resources: [],
-      isCompleted: false,
-    })),
-  }));
+          : "not_started";
+
+    return {
+      phase: oldPhase.phase,
+      title: oldPhase.title,
+      description: oldPhase.description,
+      status,
+      estimatedDuration: "2-4 weeks", // Can be populated from AI or config
+      steps: oldPhase.tasks.map((task, taskIndex) => ({
+        id: `step_${oldPhase.phase}_${taskIndex}`,
+        title: task,
+        description: `Step for ${oldPhase.title}`, // You can enhance this from AI
+        status: "not_started" as RoadmapStatus,
+        priority: taskIndex === 0 ? "high" : "medium",
+        relatedSchemes: [], // Can be populated from AI recommendations
+        resources: [],
+        isCompleted: false,
+      })),
+    };
+  });
 }
 
-const AIBot = () => {
+const EnhancedAIBot = () => {
   const [step, setStep] = useState<"input" | "chat">("input");
+  
+  // Form state
   const [formData, setFormData] = useState({
     idea: "",
     age: "",
@@ -67,39 +88,25 @@ const AIBot = () => {
     location: "",
     fundingStatus: "",
   });
+
   const [isHydrating, setIsHydrating] = useState(true);
 
+  // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // NEW: Roadmap state with new format
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
-  const [roadmapContext, setRoadmapContext] = useState("");
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
 
   // Scheme comparison context
-  const { selectedSchemes, isComparisonOpen, closeComparison } = useSchemeComparison();
+  const { selectedSchemes, isComparisonOpen } = useSchemeComparison();
 
-  // Load saved progress from storage
-  function loadProgress(phases: RoadmapPhase[]) {
-    const savedProgress = localStorage.getItem("roadmapProgress");
-    if (savedProgress) {
-      const progress = JSON.parse(savedProgress);
-      setCompletedSteps(new Set(progress.completedSteps || []));
-      setCurrentPhaseIndex(progress.currentPhaseIndex || 0);
-    }
-  }
+  const [roadmapContext, setRoadmapContext] = useState("");
 
-  // Save progress to storage and backend
-  function saveProgress() {
-    const progress = {
-      completedSteps: Array.from(completedSteps),
-      currentPhaseIndex,
-      lastSaved: new Date().toISOString(),
-    };
-    localStorage.setItem("roadmapProgress", JSON.stringify(progress));
-  }
-
+  // ========== INITIALIZE ROADMAP ON MOUNT ==========
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -115,7 +122,7 @@ const AIBot = () => {
       })
       .then((res) => {
         if (res.data.roadmap && res.data.roadmap.length > 0) {
-          // Convert old format to new
+          // CONVERT OLD FORMAT TO NEW
           const newRoadmap = convertToNewRoadmapFormat(res.data.roadmap);
           setRoadmap(newRoadmap);
           setStep("chat");
@@ -123,7 +130,7 @@ const AIBot = () => {
           const summary = createSummary(newRoadmap);
           setRoadmapContext(summary);
 
-          // Load saved progress
+          // Load any saved progress
           loadProgress(newRoadmap);
         } else {
           setStep("input");
@@ -133,34 +140,54 @@ const AIBot = () => {
       .finally(() => setIsHydrating(false));
   }, []);
 
+  // ========== LOAD PROGRESS FROM STORAGE ==========
+  function loadProgress(phases: RoadmapPhase[]) {
+    const savedProgress = localStorage.getItem("roadmapProgress");
+    if (savedProgress) {
+      const progress = JSON.parse(savedProgress);
+      setCompletedSteps(new Set(progress.completedSteps || []));
+      setCurrentPhaseIndex(progress.currentPhaseIndex || 0);
+    }
+  }
 
+  // ========== SAVE PROGRESS ==========
+  function saveProgress() {
+    const progress = {
+      completedSteps: Array.from(completedSteps),
+      currentPhaseIndex,
+      lastSaved: new Date().toISOString(),
+    };
+    localStorage.setItem("roadmapProgress", JSON.stringify(progress));
+  }
 
-const createSummary = (phases: RoadmapPhase[]) => {
-  return phases
-    .map((p) => `Phase ${p.phase}: ${p.title} - ${p.description}`)
-    .join(". ");
-};
+  // ========== CREATE SUMMARY FOR AI CONTEXT ==========
+  function createSummary(phases: RoadmapPhase[]): string {
+    return phases
+      .map((p) => `Phase ${p.phase}: ${p.title} - ${p.description}`)
+      .join(". ");
+  }
 
-const handleFormSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
+  // ========== HANDLE FORM SUBMISSION ==========
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
 
-  try {
-    // Save form
-    await axios.post("http://localhost:5000/roadmap_genration_form", {
-      user_id: 1,
-      startup_idea: formData.idea,
-      age: Number(formData.age),
-      gender: formData.gender,
-      category: formData.category,
-      location: formData.location,
-      funding_status: formData.fundingStatus,
-    });
+    try {
+      // Save form
+      await axios.post("http://localhost:5000/roadmap_generation_form", {
+        user_id: 1,
+        startup_idea: formData.idea,
+        age: Number(formData.age),
+        gender: formData.gender,
+        category: formData.category,
+        location: formData.location,
+        funding_status: formData.fundingStatus,
+      });
 
-    // Call AI roadmap
-    const token = localStorage.getItem("token");
+      // Call AI roadmap
+      const token = localStorage.getItem("token");
 
-const aiRes = await axios.post(
+      const aiRes = await axios.post(
         "http://localhost:5000/generate_roadmap",
         {
           query: `I am ${formData.age} years old ${formData.gender}. 
@@ -176,7 +203,7 @@ const aiRes = await axios.post(
         }
       );
 
-      // Convert old format to new
+      // CONVERT OLD FORMAT TO NEW
       const newRoadmap = convertToNewRoadmapFormat(aiRes.data.roadmap);
       setRoadmap(newRoadmap);
 
@@ -195,18 +222,15 @@ const aiRes = await axios.post(
 
       // Save progress
       saveProgress();
+    } catch (error) {
+      console.error(error);
+      alert("AI roadmap generation failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  } catch (error) {
-    console.error(error);
-    alert("AI roadmap generation failed");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-
-  // Handle step completion
+  // ========== HANDLE STEP COMPLETION ==========
   const handleStepComplete = useCallback(
     (stepId: string) => {
       setCompletedSteps((prev) => {
@@ -240,6 +264,7 @@ const aiRes = await axios.post(
     []
   );
 
+  // ========== HANDLE CHAT MESSAGE ==========
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -250,14 +275,20 @@ const aiRes = await axios.post(
     setIsLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/chat_with_roadmap", {
-        message: userMsg,
-        context: roadmapContext,
-      });
+      const res = await axios.post(
+        "http://localhost:5000/chat_with_roadmap",
+        {
+          message: userMsg,
+          context: roadmapContext,
+        }
+      );
 
       const aiText = res.data.response || "Sorry, I could not generate a reply.";
 
-      setMessages((prev) => [...prev, { role: "assistant", content: aiText }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: aiText },
+      ]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -268,14 +299,14 @@ const aiRes = await axios.post(
     }
   };
 
-if (isHydrating) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-muted-foreground">Loading your roadmap...</p>
-    </div>
-  );
-}
-
+  // ========== LOADING STATE ==========
+  if (isHydrating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading your roadmap...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -283,6 +314,7 @@ if (isHydrating) {
       <main className="flex-1 pt-16">
         <div className="container mx-auto px-6 py-12">
           <AnimatePresence mode="wait">
+            {/* ========== INPUT FORM STEP ========== */}
             {step === "input" ? (
               <motion.div
                 key="input"
@@ -316,29 +348,39 @@ if (isHydrating) {
                           rows={4}
                           placeholder="Describe your startup idea in detail..."
                           value={formData.idea}
-                          onChange={(e) => setFormData({ ...formData, idea: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, idea: e.target.value })
+                          }
                           required
                         />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">Age *</label>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Age *
+                          </label>
                           <Input
                             type="number"
                             placeholder="25"
                             value={formData.age}
-                            onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({ ...formData, age: e.target.value })
+                            }
                             required
                             className="rounded-xl h-12"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">Gender *</label>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Gender *
+                          </label>
                           <select
                             className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                             value={formData.gender}
-                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({ ...formData, gender: e.target.value })
+                            }
                             required
                           >
                             <option value="">Select gender</option>
@@ -351,11 +393,18 @@ if (isHydrating) {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">Category *</label>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Category *
+                          </label>
                           <select
                             className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                             value={formData.category}
-                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                category: e.target.value,
+                              })
+                            }
                             required
                           >
                             <option value="">Select category</option>
@@ -367,11 +416,18 @@ if (isHydrating) {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">Location (State) *</label>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Location (State) *
+                          </label>
                           <select
                             className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                             value={formData.location}
-                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                location: e.target.value,
+                              })
+                            }
                             required
                           >
                             <option value="">Select state</option>
@@ -387,11 +443,18 @@ if (isHydrating) {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">Funding Status *</label>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Funding Status *
+                        </label>
                         <select
                           className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                           value={formData.fundingStatus}
-                          onChange={(e) => setFormData({ ...formData, fundingStatus: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              fundingStatus: e.target.value,
+                            })
+                          }
                           required
                         >
                           <option value="">Select funding status</option>
@@ -399,7 +462,9 @@ if (isHydrating) {
                           <option value="Pre-seed">Pre-seed</option>
                           <option value="Seed">Seed</option>
                           <option value="Series A+">Series A+</option>
-                          <option value="Looking for funding">Looking for funding</option>
+                          <option value="Looking for funding">
+                            Looking for funding
+                          </option>
                         </select>
                       </div>
                     </div>
@@ -412,6 +477,7 @@ if (isHydrating) {
                 </form>
               </motion.div>
             ) : (
+              /* ========== CHAT & ROADMAP VIEW ========== */
               <motion.div
                 key="chat"
                 initial={{ opacity: 0, y: 20 }}
@@ -423,11 +489,10 @@ if (isHydrating) {
                   scheme1={selectedSchemes[0]}
                   scheme2={selectedSchemes[1]}
                   isOpen={isComparisonOpen}
-                  onClose={closeComparison}
                 />
 
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                  {/* Chat Section */}
+                  {/* ========== CHAT SECTION ========== */}
                   <div className="lg:col-span-2">
                     <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-card h-[600px] flex flex-col">
                       <div className="p-4 border-b border-border bg-surface-subtle">
@@ -444,7 +509,9 @@ if (isHydrating) {
                             key={index}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+                            className={`flex gap-3 ${
+                              msg.role === "user" ? "flex-row-reverse" : ""
+                            }`}
                           >
                             <div
                               className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -475,9 +542,18 @@ if (isHydrating) {
                             </div>
                             <div className="px-4 py-3 rounded-2xl bg-secondary">
                               <div className="flex gap-1">
-                                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                                <span
+                                  className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                                  style={{ animationDelay: "0ms" }}
+                                />
+                                <span
+                                  className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                                  style={{ animationDelay: "150ms" }}
+                                />
+                                <span
+                                  className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                                  style={{ animationDelay: "300ms" }}
+                                />
                               </div>
                             </div>
                           </div>
@@ -491,7 +567,9 @@ if (isHydrating) {
                             placeholder="Ask a follow-up question..."
                             value={inputMessage}
                             onChange={(e) => setInputMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                            onKeyPress={(e) =>
+                              e.key === "Enter" && handleSendMessage()
+                            }
                             className="rounded-xl"
                           />
                           <Button
@@ -507,7 +585,7 @@ if (isHydrating) {
                     </div>
                   </div>
 
-                  {/* Roadmap Section - NEW COMPONENT */}
+                  {/* ========== ROADMAP SECTION - NOW USING NEW COMPONENT ========== */}
                   <div className="lg:col-span-3">
                     <RoadmapContainer
                       phases={roadmap}
@@ -527,4 +605,34 @@ if (isHydrating) {
   );
 };
 
-export default AIBot;
+export default EnhancedAIBot;
+
+/**
+ * ========== INTEGRATION NOTES ==========
+ * 
+ * KEY ADDITIONS:
+ * 1. convertToNewRoadmapFormat() - Converts API output to new format
+ * 2. RoadmapContainer - Replaces simple roadmap display
+ * 3. handleStepComplete() - Handles step completion with progress saving
+ * 4. SchemeComparisonPanel - Allows comparing schemes from roadmap context
+ * 5. Progress persistence - Saves completed steps to localStorage
+ * 
+ * FEATURES NOW AVAILABLE:
+ * ✅ Expandable phases with full step details
+ * ✅ Progress tracking (percentage per phase)
+ * ✅ Current phase highlighting with pulsing indicator
+ * ✅ Recommended next steps widget
+ * ✅ Step completion with animations
+ * ✅ Scheme comparison integration
+ * ✅ Responsive mobile layout
+ * ✅ Progress persistence across sessions
+ * 
+ * MIGRATION STEPS:
+ * 1. Copy convertToNewRoadmapFormat() function
+ * 2. Import RoadmapContainer and related modules
+ * 3. Replace old roadmap rendering with <RoadmapContainer />
+ * 4. Update handleFormSubmit to use new format
+ * 5. Add handleStepComplete handler
+ * 6. Add localStorage persistence logic
+ * 7. Test the full flow end-to-end
+ */
