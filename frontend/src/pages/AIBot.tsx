@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Sparkles, ArrowRight, User, Bot, Loader2 } from "lucide-react";
 import axios from "axios";
+import ReactMarkdown from "react-markdown";
 import { RoadmapContainer } from "@/components/roadmap/RoadmapContainer";
 import { SchemeComparisonPanel } from "@/components/scheme-comparison/SchemeComparisonPanel";
 import { useSchemeComparison } from "@/contexts/SchemeComparisonContext";
@@ -250,9 +251,12 @@ const aiRes = await axios.post(
     setIsLoading(true);
 
     try {
+      const token = localStorage.getItem("token");
       const res = await axios.post("http://localhost:5000/chat_with_roadmap", {
         message: userMsg,
         context: roadmapContext,
+      }, {
+        headers: token ? { Authorization: token } : {}
       });
 
       const aiText = res.data.response || "Sorry, I could not generate a reply.";
@@ -464,7 +468,31 @@ if (isHydrating) {
                                   : "bg-secondary text-secondary-foreground"
                               }`}
                             >
-                              <p className="text-sm">{msg.content}</p>
+                              {msg.role === "user" ? (
+                                <p className="text-sm">{msg.content}</p>
+                              ) : (
+                                <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                                  <ReactMarkdown
+                                    components={{
+                                      p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                      ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-2" {...props} />,
+                                      ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-2" {...props} />,
+                                      li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                                      strong: ({ node, ...props }) => <strong className="font-bold" {...props} />,
+                                      em: ({ node, ...props }) => <em className="italic" {...props} />,
+                                      code: ({ node, inline, ...props }) => 
+                                        inline ? 
+                                          <code className="bg-black/20 px-1.5 py-0.5 rounded text-xs" {...props} /> :
+                                          <pre className="bg-black/20 p-2 rounded text-xs overflow-x-auto mb-2" {...props} />,
+                                      h1: ({ node, ...props }) => <h1 className="text-lg font-bold mb-2" {...props} />,
+                                      h2: ({ node, ...props }) => <h2 className="text-base font-bold mb-2" {...props} />,
+                                      h3: ({ node, ...props }) => <h3 className="text-sm font-bold mb-1" {...props} />,
+                                    }}
+                                  >
+                                    {msg.content}
+                                  </ReactMarkdown>
+                                </div>
+                              )}
                             </div>
                           </motion.div>
                         ))}
