@@ -1,0 +1,1050 @@
+================================================================================
+                    FOUNDERS FIRST - PROJECT CONTEXT DOCUMENT
+                          Comprehensive AI Context Guide
+================================================================================
+
+DOCUMENT VERSION: 3.0
+LAST UPDATED: April 5, 2026
+PROJECT STATUS: MVP Development Phase - Active Development
+
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+PROJECT NAME: Founders First
+
+PURPOSE & HIGH-LEVEL OBJECTIVES:
+Founders First is a comprehensive digital platform designed to support aspiring
+entrepreneurs and startup founders in India by providing centralized access to
+government schemes, funding opportunities, mentorship resources, and AI-powered
+guidance.
+
+PRIMARY PROBLEM STATEMENT:
+Indian entrepreneurs face significant challenges in discovering and navigating
+relevant government schemes and funding opportunities. Information is fragmented
+across multiple government websites, eligibility criteria are complex, and many
+promising founders miss critical opportunities due to lack of awareness or
+understanding of available support systems.
+
+TARGET USERS:
+- Aspiring entrepreneurs (age 18+)
+- Early-stage startup founders
+- Students interested in entrepreneurship
+- Women entrepreneurs
+- Entrepreneurs from underrepresented categories (SC/ST/OBC)
+- Individuals from Tier-II and Tier-III cities
+
+KEY FEATURES & EXPECTED OUTCOMES:
+
+1. Scheme Discovery & Filtering
+   - Comprehensive database of government schemes (~830 schemes)
+   - Multi-dimensional filtering (by funding amount, category, sector, geography)
+   - Scheme comparison tool (side-by-side comparison of 2 schemes)
+   - Personalized scheme recommendations based on user profile
+
+2. AI-Powered Guidance (AI Bot) — FULLY IMPLEMENTED
+   - Interactive chatbot powered by LangGraph agent with Google Gemini LLM
+   - Generates personalized entrepreneurial roadmaps via RAG pipeline
+   - Provides step-by-step guidance for startup development
+   - Uses tools for fetching user profiles, roadmaps, schemes, and web search
+   - Conversation memory persisted via PostgreSQL checkpointer
+   - Fallback LLM support (Groq/LLaMA when Gemini is unavailable)
+
+3. User Dashboard
+   - Personalized profile management
+   - Tracking of saved schemes and resources
+   - Progress monitoring on entrepreneurial journey
+   - Onboarding modal for new users
+
+4. Roadmap Generation & Tracking
+   - AI-generated startup roadmaps based on user profile
+   - Phase-based progress tracking with step completion
+   - Interactive roadmap visualization with expandable phases
+   - Scheme recommendations per roadmap phase
+
+5. Knowledge Bank
+   - Curated resources for entrepreneurs
+   - Best practices and educational content
+   - Links to relevant documentation and guides
+
+6. Authentication & User Management
+   - Secure signup/login functionality
+   - JWT-based session management
+   - Protected routes for authenticated users
+
+7. Admin Panel (In Development)
+   - File upload for RAG data ingestion
+   - Admin-only access for content management
+
+EXPECTED OUTCOMES:
+- Enable entrepreneurs to discover relevant schemes in < 5 minutes
+- Provide personalized roadmaps for startup development
+- Increase awareness of available government support
+- Support job creation and economic growth through entrepreneurship
+- Bridge the gap between entrepreneurs and funding opportunities
+
+
+================================================================================
+2. SCOPE AND ASSUMPTIONS
+================================================================================
+
+IN-SCOPE FUNCTIONALITY:
+
+Frontend Features:
+✓ Public landing page with hero section and feature highlights
+✓ Schemes catalog with advanced filtering and comparison
+✓ Interactive AI bot with chat and roadmap generation (fully integrated)
+✓ Knowledge bank with curated resources
+✓ User authentication (signup/login)
+✓ Protected dashboard for authenticated users
+✓ User profile management and onboarding modal
+✓ Interactive roadmap visualization and progress tracking
+✓ Scheme comparison (side-by-side split view and table)
+✓ About/Information pages
+✓ Responsive design for desktop and mobile
+✓ Markdown rendering in AI chat responses
+✓ Chat history persistence across page reloads
+✓ Admin page with file upload for data ingestion
+
+Backend Features:
+✓ User authentication and authorization (JWT)
+✓ User data management (signup, profile updates)
+✓ Secure credential handling (password hashing with bcrypt)
+✓ Database integration for persistent storage
+✓ Chat proxy to AI backend with timeout handling
+✓ Chat history retrieval endpoint
+✓ Roadmap generation and retrieval endpoints
+✓ Startup form submission endpoint
+✓ User profile endpoint
+✓ CORS support for cross-origin requests
+
+AI Backend Features:
+✓ LangGraph-powered conversational AI agent (v3 architecture)
+✓ RAG (Retrieval Augmented Generation) with MongoDB vector search
+✓ Data ingestion pipeline supporting PDF, JSON, TXT, HTML files
+✓ Scheme data vectorization and semantic search
+✓ Tool-based agent architecture (profile, roadmap, schemes, web search)
+✓ Conversation memory via PostgreSQL checkpointer
+✓ Health check endpoint for monitoring
+✓ Dual LLM support (Gemini primary, Groq fallback)
+
+OUT-OF-SCOPE FUNCTIONALITY (At Current Stage):
+
+✗ Direct payment processing or financial transactions
+✗ Scheme application submission through platform
+✗ Direct government agency integration
+✗ Real-time scheme status tracking from government databases
+✗ Native mobile applications (web-responsive only)
+✗ Multi-language support (currently English only)
+✗ Video content generation or hosting
+✗ Integration with third-party lending platforms
+✗ Social networking features
+
+TECHNICAL CONSTRAINTS:
+
+1. Development Environment
+   - Python 3.11+ required
+   - Node.js with npm/bun package manager
+   - PostgreSQL database (Azure-hosted) for user data and agent checkpointer
+   - MongoDB Atlas for RAG vector store
+   - Flask web server for backend API
+   - FastAPI/Uvicorn for AI backend
+
+2. Data Constraints
+   - Scheme data: ~830 structured government schemes
+   - RAG vector index on MongoDB Atlas
+   - Data quality depends on source document accuracy
+   - No real-time data synchronization with government sources
+
+3. Security Constraints
+   - JWT tokens expire after 24 hours
+   - No multi-factor authentication at current stage
+   - Database credentials stored in .env (security improvement needed)
+   - SSL/TLS required for database connections
+
+4. Performance Constraints
+   - Backend runs on single Flask instance (no load balancing)
+   - AI backend: LLM rate limiting (Gemini 14 req/min, Groq 25 req/min)
+   - Chat timeout: 5 minutes max for AI response
+   - Frontend proxies through localhost:5000 in development
+
+5. AI/LLM Constraints
+   - Primary LLM: Google Gemini 2.5 Flash Lite (rate limited)
+   - Fallback LLM: Groq LLaMA 3.1 8B Instant
+   - Max 5 tool round-trips per user message
+   - Embedding model: Gemini Embedding 001 (768 dimensions)
+
+
+ASSUMPTIONS MADE DURING DESIGN & DEVELOPMENT:
+
+1. Technical Assumptions
+   - Users have stable internet connectivity
+   - PostgreSQL is the primary database (psycopg2 driver)
+   - MongoDB Atlas for vector search (pymongo driver)
+   - Frontend always available at same origin as backend or accessible via proxy
+   - JWT secret from environment variable
+   - Users' browsers support ES2020+ JavaScript features
+
+2. Business Assumptions
+   - Government schemes database will remain relatively stable
+   - Target users prefer digital self-service over phone support
+   - Personalized recommendations will increase user engagement
+   - Users trust government-curated scheme information
+   - Majority of users access platform from India
+
+3. User Behavior Assumptions
+   - Users are willing to complete the startup profile form
+   - Users prefer English language interface
+   - Users will engage with AI bot for guidance
+   - Desktop is primary access device initially
+
+4. Data Assumptions
+   - Scraped/ingested scheme data is accurate and up-to-date
+   - Users' personal data is sensitive and needs protection
+   - Scheme eligibility criteria can be accurately categorized
+   - User journey stages follow typical startup progression
+
+
+================================================================================
+3. SYSTEM ARCHITECTURE
+================================================================================
+
+HIGH-LEVEL ARCHITECTURE OVERVIEW:
+
+The Founders First platform follows a three-tier architecture with a dedicated
+AI service layer:
+
+    ┌─────────────────────────────────────────────────────────┐
+    │              CLIENT LAYER (Browser)                     │
+    │  ┌──────────────────────────────────────────────────┐   │
+    │  │   React SPA with React Router                    │   │
+    │  │   - Component-based UI with shadcn-ui            │   │
+    │  │   - State management (React Context, React Query)│   │
+    │  │   - Responsive design with Tailwind CSS          │   │
+    │  └──────────────────────────────────────────────────┘   │
+    │                         │                               │
+    │                    HTTP/HTTPS                            │
+    │                         │                               │
+    └─────────────────────────────────────────────────────────┘
+                              │
+    ┌─────────────────────────────────────────────────────────┐
+    │           APPLICATION LAYER (Backend API)               │
+    │  ┌──────────────────────────────────────────────────┐   │
+    │  │   Flask Web Server (Python) — Port 5000          │   │
+    │  │   - REST API endpoints                           │   │
+    │  │   - Authentication/Authorization (JWT)           │   │
+    │  │   - Chat proxy to AI backend                     │   │
+    │  │   - Roadmap generation & retrieval               │   │
+    │  │   - CORS support for cross-origin requests       │   │
+    │  └──────────────────────────────────────────────────┘   │
+    │               │                       │                 │
+    │          DB Connection         HTTP Proxy               │
+    │               │                       │                 │
+    └───────────────│───────────────────────│─────────────────┘
+                    │                       │
+    ┌───────────────│───────────────────────│─────────────────┐
+    │               ▼                       ▼                 │
+    │  ┌──────────────────┐  ┌───────────────────────────┐   │
+    │  │ PostgreSQL (Azure)│  │  AI Backend (FastAPI)     │   │
+    │  │ - Users table     │  │  Port 7000 (dev)          │   │
+    │  │ - Startup forms   │  │  ┌─────────────────────┐  │   │
+    │  │ - Roadmaps        │  │  │ LangGraph Agent v3  │  │   │
+    │  │ - LangGraph       │  │  │ - Gemini LLM        │  │   │
+    │  │   checkpointer    │  │  │ - Groq fallback     │  │   │
+    │  └──────────────────┘  │  │ - Tool execution     │  │   │
+    │                        │  └─────────────────────┘  │   │
+    │  ┌──────────────────┐  │  ┌─────────────────────┐  │   │
+    │  │ MongoDB Atlas     │  │  │ RAG Pipeline        │  │   │
+    │  │ - rag_db.schemes  │  │  │ - Vector search     │  │   │
+    │  │ - Vector index    │  │  │ - Embedding gen     │  │   │
+    │  │ - 768-dim vectors │  │  │ - Data ingestion    │  │   │
+    │  └──────────────────┘  │  └─────────────────────┘  │   │
+    │                        └───────────────────────────┘   │
+    │                DATA & AI LAYER                          │
+    └─────────────────────────────────────────────────────────┘
+
+
+MAJOR COMPONENTS & INTERACTIONS:
+
+FRONTEND COMPONENTS ARCHITECTURE:
+
+1. Layout Components
+   - Header (Header.tsx): Navigation bar with links to main sections
+   - Footer (Footer.tsx): Company info and links
+   - Used across all pages for consistent branding
+
+2. Page Components (src/pages/)
+   - Index: Landing page with hero, features, schemes preview, knowledge preview
+   - Auth: Signup/Login page with form validation
+   - Dashboard: User dashboard (protected route)
+   - Schemes: Scheme catalog with filtering, search, and comparison
+   - AIBot: AI assistant with startup form, chat, and interactive roadmap
+   - Knowledge: Knowledge bank and resources
+   - About: Information about the platform
+   - Admin: Admin panel with file upload for RAG ingestion (protected)
+   - NotFound: 404 error page
+
+3. Dashboard Sub-components (src/components/dashboard/)
+   - UserOverview: User profile summary
+   - ProfileCompletion: Progress indicator for profile completion
+   - JourneyInsights: Insights on user's entrepreneurial journey
+   - QuickActions: Shortcuts to common tasks
+   - OnboardingModal: Initial setup wizard for new users
+
+4. Home Section Sub-components (src/components/home/)
+   - HeroSection: Main landing page hero
+   - FeaturesSection: Feature highlights
+   - SchemesPreview: Featured schemes preview
+   - KnowledgeBankPreview: Featured knowledge resources
+
+5. Roadmap Components (src/components/roadmap/)
+   - RoadmapContainer: Overall roadmap layout and phase management
+   - RoadmapPhase: Individual phase card with status and progress
+   - RoadmapStep: Individual step with completion tracking
+
+6. Scheme Components (src/components/scheme/)
+   - SchemeCard: Individual scheme display card
+
+7. Scheme Comparison Components (src/components/scheme-comparison/)
+   - SchemeComparisonPanel: Comparison panel container
+   - SchemeComparisonSplit: Side-by-side split view
+   - SchemeComparisonTable: Tabular comparison view
+
+8. Admin Components (src/components/admin/)
+   - FileUploadArea: File upload interface for RAG data ingestion
+
+9. Contexts (src/contexts/)
+   - UserProfileContext: User profile state and management
+   - SchemeComparisonContext: Scheme comparison state (selected schemes,
+     comparison open/close, saved comparisons)
+
+10. UI Component Library (src/components/ui/)
+    - shadcn-ui components (button, input, dialog, accordion, etc.)
+    - Built on Radix UI primitives
+    - Styled with Tailwind CSS
+    - Toast notifications via Sonner
+
+11. Type Definitions (src/types/index.ts)
+    - Scheme, RoadmapPhase, RoadmapStep, RoadmapStatus
+    - SavedComparison and other shared types
+
+BACKEND COMPONENTS (backend/):
+
+1. API Endpoints (main.py)
+   - POST /signup: User registration
+   - POST /login: User authentication (returns JWT)
+   - GET /user-profile: Retrieve user profile (protected)
+   - POST /roadmap_genration_form: Submit startup profile form
+   - POST /generate_roadmap: Generate AI roadmap (protected)
+   - GET /my-roadmap: Retrieve user's saved roadmap (protected)
+   - POST /chat/stream: Proxy chat to AI backend (protected)
+   - GET /chat/history: Retrieve chat history from AI backend (protected)
+   - POST /chat_with_roadmap: Legacy chat endpoint (backward compat)
+   - GET /test: Health check / sanity endpoint
+
+2. Authentication Module (main.py)
+   - JWT token generation and validation
+   - Password hashing with bcrypt
+   - get_user_from_token() helper for all protected endpoints
+   - SECRET_KEY from environment variable (with fallback)
+
+3. Database Layer (db.py)
+   - get_db_connection(): Connection with retry logic (3 retries)
+   - Handles Azure free-tier auto-pause wake-up
+   - Uses psycopg2 for PostgreSQL
+
+4. Error Handling
+   - Standard HTTP status codes (200, 201, 400, 401, 404, 500, 502, 504)
+   - JSON error responses with descriptive messages
+   - Specific timeout handling for AI backend (504 Gateway Timeout)
+   - Connection error handling for AI backend (502 Bad Gateway)
+
+5. Database Schema Files (schema/)
+   - user.sql: Users table schema
+   - startup_form.sql: Startup forms table schema
+
+AI BACKEND COMPONENTS (ai-backend/):
+
+1. Unified Server (app.py — FastAPI)
+   - Lifespan management for PostgresSaver checkpointer
+   - POST /chat/stream: Chat endpoint (invokes LangGraph agent)
+   - GET /message-history/{thread_id}: Retrieve conversation history
+   - GET /roadmap/: RAG-based roadmap generation
+   - POST /ingest: File ingestion into RAG vector database
+   - GET /health: Health check for monitoring
+   - GET /test: Sanity check endpoint
+
+2. LangGraph Agent v3 (agent3.py)
+   Architecture: START → agent → [tool_calls?] → tools → agent → END
+   - AgentState: messages (append-only), _tool_messages (ephemeral),
+     query, user_id, _tool_round
+   - agent_node: Core LLM node with ephemeral SystemMessage injection
+   - tool_executor_node: Executes tool calls with error handling
+   - route_after_agent: Routes to tools or END
+   - build_graph(): Compiles the graph with checkpointer
+   - get_clean_messages(): Retrieves clean conversation history
+   - Message storage: ONLY HumanMessage + AIMessage persisted (clean history)
+   - ToolMessages are ephemeral (used within turn, not persisted)
+
+3. LLMs Used
+   - Primary: Google Gemini 2.5 Flash Lite (rate limited: 14 req/min)
+   - Fallback: Groq LLaMA 3.1 8B Instant (rate limited: 25 req/min)
+   - Both available with and without tool bindings
+   - Automatic fallback on primary LLM failure
+
+4. Tools (tools.py)
+   - fetch_schemes_from_vectordb(query): Semantic scheme search via MongoDB
+   - user_profile_fetcher(user_id): Fetch user's startup profile from PostgreSQL
+   - get_user_roadmap(user_id): Fetch user's roadmap from PostgreSQL
+   - web_search(query): Web search via Tavily API
+
+5. Utilities (utils.py)
+   - search_in_vectordb(): MongoDB Atlas vector search (768-dim embeddings)
+   - generate_embedding(): Cached embedding generation (LRU cache, 256 entries)
+   - get_user_profile(): PostgreSQL query for user startup data
+   - get_user_roadmap(): PostgreSQL query for roadmap data
+   - clean_agent_state(): Legacy message cleaning (for older agent versions)
+   - Singletons: MongoDB client (pooled), PostgreSQL connection pool (2-10)
+
+6. Data Ingestion Pipeline (data_ingestion/ingestion_pipeline.py)
+   - Supports: PDF, JSON, TXT, HTML files
+   - Uses LangChain document loaders (PyPDFLoader, JSONLoader, etc.)
+   - RecursiveCharacterTextSplitter with format-specific separators
+   - Batch embedding generation with Google Gemini
+   - SHA-256 deduplication (skip already-ingested chunks)
+   - Stores in MongoDB with text, embedding, hash, metadata
+
+7. Schema Definitions (Schema.py)
+   - QueryAgentState: Legacy agent state (for older agent versions)
+   - QueryClassification: Intent classification types
+   - ResponseCategory: Response quality categorization
+
+8. Server Runner (run_server.py)
+   - Windows event loop policy setup
+   - Configurable port (default 8001, typically run on 7000)
+
+FRONTEND-BACKEND-AI DATA FLOW:
+
+Chat Flow:
+1. Frontend sends POST /chat/stream to Flask backend with message + JWT token
+2. Flask extracts user_id from JWT, proxies to AI backend POST /chat/stream
+3. AI backend invokes LangGraph agent with user's message
+4. Agent may call tools (profile, roadmap, schemes, web search) as needed
+5. Agent produces final AIMessage → returned to Flask → returned to frontend
+6. Conversation persisted in PostgreSQL checkpointer (thread_id = user_id)
+
+Roadmap Generation Flow:
+1. User fills startup profile form → POST /roadmap_genration_form
+2. User clicks generate → POST /generate_roadmap
+3. Flask calls AI backend /roadmap/ endpoint (via Azure deployment)
+4. AI uses RAG context + Gemini LLM to generate phased roadmap
+5. Roadmap saved to PostgreSQL roadmaps table
+6. Frontend renders interactive roadmap with progress tracking
+
+Chat History Flow:
+1. Frontend calls GET /chat/history on page load
+2. Flask proxies to AI backend GET /message-history/{thread_id}
+3. AI backend reads from LangGraph checkpointer (PostgreSQL)
+4. Clean messages returned (HumanMessage + AIMessage only)
+
+
+DEPLOYMENT ENVIRONMENT:
+
+CURRENT DEPLOYMENT SETUP:
+
+Development Environment:
+- Frontend: Vite dev server (localhost:8080)
+- Backend: Flask development server (localhost:5000)
+- AI Backend: FastAPI/Uvicorn (localhost:7000)
+- Database: Azure PostgreSQL (cloud-hosted)
+- Vector DB: MongoDB Atlas (cloud-hosted)
+- OS: Windows (development machine)
+- Startup: start-all.ps1 script launches all 3 services
+
+Development Startup:
+  Option 1: Run start-all.ps1 from project root
+  Option 2: Manual startup in 3 terminals:
+    Terminal 1 (Frontend): cd frontend && npm run dev
+    Terminal 2 (Backend): cd backend && .venv\Scripts\Activate.ps1 && python main.py
+    Terminal 3 (AI Backend): cd ai-backend && .venv\Scripts\Activate.ps1 && python run_server.py 7000
+
+Production Deployment (Partial):
+- AI Backend: Deployed on Azure Container Apps
+  URL: https://aibackend.thankfulriver-53eeedbe.southeastasia.azurecontainerapps.io
+- Frontend & Backend: Not yet deployed (development only)
+
+
+================================================================================
+4. TECHNOLOGY STACK
+================================================================================
+
+FRONTEND TECHNOLOGY STACK:
+
+Core Framework & Language:
+- React 18.3.1: UI library for component-based development
+- TypeScript 5.8.3: Strongly typed JavaScript
+- React Router 6.30.1: Client-side routing
+- Vite 5.4.19: Modern bundler and dev server
+
+Build & Development Tools:
+- Node.js with npm/bun: Package management
+- Tailwind CSS 3.4.17: Utility-first CSS framework
+- PostCSS 8.5.6: CSS transformation tool
+
+UI Component Library:
+- shadcn-ui: High-quality, customizable UI components
+- Radix UI: Unstyled, accessible component primitives
+- Lucide React 0.462.0: Icon library (460+ icons)
+
+State Management & Data Fetching:
+- React Query (@tanstack/react-query 5.83.0): Server state management
+- React Hook Form 7.61.1: Form state management
+- React Context API: Local state (UserProfileContext, SchemeComparisonContext)
+- Zod 3.25.76: TypeScript-first schema validation
+
+UI/UX Libraries:
+- Framer Motion 12.23.25: Animation library
+- Sonner 1.7.4: Toast notification system
+- ReactMarkdown: Markdown rendering in AI chat responses
+- Embla Carousel React 8.6.0: Carousel/slider component
+- React Resizable Panels 2.1.9: Resizable panel layouts
+
+HTTP & API Communication:
+- Axios 1.13.2: Promise-based HTTP client
+- Fetch API: Used for chat streaming endpoint
+
+
+BACKEND TECHNOLOGY STACK (backend/):
+
+Core Framework & Language:
+- Python 3.11+: Server-side language
+- Flask 3.1.2: Lightweight web framework
+- Flask-CORS 6.0.2: Cross-origin resource sharing
+- Requests 2.32.5: HTTP client for AI backend proxy
+
+Authentication & Security:
+- PyJWT 2.10.1: JWT generation and validation
+- Flask-Bcrypt 1.0.1: Password hashing with bcrypt
+- dotenv 0.9.9: Environment variable management
+
+Database Connectivity:
+- psycopg2 2.9.11 & psycopg2-binary: PostgreSQL adapter
+
+
+AI BACKEND TECHNOLOGY STACK (ai-backend/):
+
+Core Framework:
+- FastAPI 0.128.0: Modern async web framework
+- Uvicorn 0.40.0: ASGI server
+- Pydantic: Request/response validation
+
+AI/ML Libraries:
+- LangChain 1.2.3: LLM framework and tool orchestration
+- LangGraph 1.0.5: Agent graph framework with state management
+- LangGraph Checkpoint Postgres 3.0.5: Agent memory persistence
+- LangChain Google GenAI 4.1.3: Gemini LLM integration
+- LangChain Groq 1.1.2: Groq/LLaMA fallback LLM
+- LangChain Community 0.4.1: Community integrations
+
+Embedding & Search:
+- Google Generative AI Embeddings: 768-dimensional vectors
+- PyMongo 4.16.0: MongoDB driver with Atlas vector search
+- Tavily 1.1.0: Web search API
+
+Data Processing:
+- BeautifulSoup4 4.14.3: HTML parsing for web scraping
+- PyPDF 6.6.2: PDF document loading
+- lxml 6.0.2: XML/HTML processing
+- jq 1.11.0: JSON query processing
+- LangChain text splitters: Document chunking
+
+Infrastructure:
+- psycopg2: PostgreSQL for checkpointer and user data
+- python-dotenv: Environment variable loading
+- python-multipart: File upload handling
+
+
+DATABASES & STORAGE:
+
+Primary Database — PostgreSQL (Azure):
+- Host: founderdb.postgres.database.azure.com
+- Port: 5432
+- SSL Mode: Required
+- Tables:
+  * users: id, name, email, password (hashed)
+  * startup_forms: user_id, startup_idea, age, gender, category,
+                    location, funding_status
+  * roadmaps: user_id, startup_idea, roadmap (JSONB)
+  * checkpoint_* tables: LangGraph agent state (auto-managed)
+
+Vector Database — MongoDB Atlas:
+- Database: rag_db
+- Collection: schemes
+- Vector Index: vector_index (768 dimensions)
+- Document Schema:
+  * hash: SHA-256 content hash (deduplication)
+  * text: Document text content
+  * embedding: 768-dimensional float vector
+  * time_added: Timestamp
+  * metadata: Source file metadata
+
+Static Data:
+- schemes_structured_documents.json (~830 schemes)
+  Fields: scheme_name, ministry, department, key_sectors, brief,
+  eligibility, benefits, benefit_tags, tenure, application_link
+  Location: ai-backend/ and frontend/src/pages/
+
+Local Data Files:
+- central_schemes.txt: Raw scheme data for ingestion
+
+
+================================================================================
+5. ROUTING & PAGES
+================================================================================
+
+FRONTEND ROUTES (React Router):
+
+Public Routes:
+- / (Index): Landing page with hero, features, schemes preview
+- /schemes (Schemes): Full scheme catalog with filtering and comparison
+- /knowledge (Knowledge): Knowledge bank resources
+- /about (About): Platform information
+- /auth (Auth): Signup/Login forms
+
+Protected Routes (require JWT token):
+- /ai-bot (AIBot): AI assistant with startup form + chat + roadmap
+- /dashboard (Dashboard): User dashboard with profile and insights
+
+Catch-All:
+- /* (NotFound): 404 error page
+
+BACKEND API ENDPOINTS (Flask — Port 5000):
+
+Authentication:
+- POST /signup — Register new user
+- POST /login — Authenticate and return JWT
+
+User Profile:
+- GET /user-profile — Get authenticated user's profile
+
+Startup Form:
+- POST /roadmap_genration_form — Submit startup profile
+
+Roadmap:
+- POST /generate_roadmap — Generate AI roadmap (protected)
+- GET /my-roadmap — Get user's saved roadmap (protected)
+
+Chat (AI Proxy):
+- POST /chat/stream — Proxy chat to AI backend (protected, 5min timeout)
+- GET /chat/history — Retrieve chat history (protected)
+- POST /chat_with_roadmap — Legacy chat endpoint
+
+Utilities:
+- GET /test — Health check
+
+AI BACKEND API ENDPOINTS (FastAPI — Port 7000):
+
+Chat:
+- POST /chat/stream — LangGraph agent chat
+- GET /message-history/{thread_id} — Conversation history
+
+RAG:
+- GET /roadmap/ — RAG-based roadmap generation
+
+Ingestion:
+- POST /ingest — File upload into RAG vector DB
+
+Infrastructure:
+- GET /health — Liveness check
+- GET /test — Sanity check
+
+
+================================================================================
+6. FILE STRUCTURE
+================================================================================
+
+founders/
+├── start-all.ps1          # PowerShell script to launch all 3 services
+├── docs/
+│   └── PROJECT_CONTEXT.txt  # This document
+│
+├── frontend/              # React/TypeScript SPA
+│   ├── src/
+│   │   ├── App.tsx         # Root component with routing
+│   │   ├── main.tsx        # Entry point
+│   │   ├── index.css       # Global styles
+│   │   ├── pages/
+│   │   │   ├── Index.tsx         # Landing page
+│   │   │   ├── Auth.tsx          # Signup/Login
+│   │   │   ├── Dashboard.tsx     # User dashboard (protected)
+│   │   │   ├── AIBot.tsx         # AI assistant + roadmap (protected)
+│   │   │   ├── Schemes.tsx       # Scheme catalog + filtering
+│   │   │   ├── Knowledge.tsx     # Knowledge bank
+│   │   │   ├── About.tsx         # About page
+│   │   │   ├── Admin.tsx         # Admin panel (protected)
+│   │   │   ├── NotFound.tsx      # 404 page
+│   │   │   └── schemes_structured_documents.json
+│   │   ├── components/
+│   │   │   ├── layout/           # Header, Footer
+│   │   │   ├── home/             # HeroSection, FeaturesSection, etc.
+│   │   │   ├── dashboard/        # UserOverview, OnboardingModal, etc.
+│   │   │   ├── roadmap/          # RoadmapContainer, RoadmapPhase, RoadmapStep
+│   │   │   ├── scheme/           # SchemeCard
+│   │   │   ├── scheme-comparison/ # ComparisonPanel, Split, Table
+│   │   │   ├── admin/            # FileUploadArea
+│   │   │   └── ui/               # shadcn-ui components
+│   │   ├── contexts/
+│   │   │   ├── UserProfileContext.tsx
+│   │   │   └── SchemeComparisonContext.tsx
+│   │   ├── hooks/
+│   │   │   ├── use-mobile.tsx
+│   │   │   └── use-toast.ts
+│   │   ├── types/
+│   │   │   └── index.ts          # Shared type definitions
+│   │   ├── routes/
+│   │   │   └── ProtectRoutes.tsx  # Auth guard component
+│   │   └── lib/                  # Utility functions
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tailwind.config.ts
+│   └── tsconfig.json
+│
+├── backend/               # Flask API Server
+│   ├── main.py            # All API endpoints
+│   ├── db.py              # Database connection with retry logic
+│   ├── schema/
+│   │   ├── user.sql       # Users table schema
+│   │   └── startup_form.sql # Startup forms schema
+│   ├── pyproject.toml     # Python dependencies
+│   └── .env               # Environment variables
+│
+├── ai-backend/            # FastAPI AI Service
+│   ├── app.py             # Unified FastAPI server (endpoints + lifespan)
+│   ├── agent3.py          # LangGraph agent v3 (optimized architecture)
+│   ├── tools.py           # Agent tools (schemes, profile, roadmap, search)
+│   ├── utils.py           # Shared utilities (vector search, DB queries)
+│   ├── Schema.py          # Legacy type definitions
+│   ├── run_server.py      # Server startup script (Windows-compatible)
+│   ├── scraper.py         # Web scraper for scheme data
+│   ├── data_ingestion/
+│   │   └── ingestion_pipeline.py  # RAG ingestion (PDF, JSON, TXT, HTML)
+│   ├── notebooks/         # Jupyter notebooks for experimentation
+│   ├── schemes_structured_documents.json  # Scheme data
+│   ├── central_schemes.txt                # Raw scheme text
+│   ├── pyproject.toml     # Python dependencies
+│   ├── requirements.txt   # Pip dependencies
+│   └── .env               # Environment variables
+│
+└── .github/               # GitHub configuration
+
+
+================================================================================
+7. AI AGENT ARCHITECTURE (agent3.py)
+================================================================================
+
+AGENT VERSION: v3 (Optimized)
+
+KEY DESIGN DECISIONS:
+- No evaluator loop — standard reactive agent pattern
+- Clean message storage: ONLY HumanMessage + AIMessage in checkpointer
+- ToolMessages are ephemeral (used within turn, never persisted)
+- SystemMessage injected at LLM invocation time only (never stored)
+- Tool iteration counter resets per user turn
+- Frontend retrieval is trivial (no post-processing needed)
+
+GRAPH TOPOLOGY:
+  START → agent_node → [has tool_calls?] → tool_executor_node → agent_node (loop)
+  START → agent_node → [no tool_calls] → END
+
+STATE SCHEMA (AgentState):
+- messages: Annotated[list, add] — Append-only clean conversation history
+- _tool_messages: list — Ephemeral tool context (replace semantics, reset per turn)
+- query: str — Current user query
+- user_id: str — Authenticated user's ID for tool calls
+- _tool_round: int — Counter for agent→tools round-trips (max 5)
+
+AGENT NODE BEHAVIOR:
+1. Builds LLM input: SystemMessage + clean history + ephemeral tool messages
+2. If max tool rounds reached → uses bare LLM (no tool bindings) to force answer
+3. Primary LLM: Gemini 2.5 Flash Lite
+4. On primary failure → fallback to Groq LLaMA 3.1 8B
+5. On both failures → returns graceful error message
+6. If response has tool_calls → stores in _tool_messages, returns empty messages
+7. If response has text → stores in messages (persisted), clears _tool_messages
+
+TOOL EXECUTOR NODE:
+1. Reads last AIMessage's tool_calls from _tool_messages
+2. Executes each tool, catches errors gracefully
+3. Appends ToolMessage results to _tool_messages
+4. Increments _tool_round counter
+
+AVAILABLE TOOLS:
+1. fetch_schemes_from_vectordb(query) — Semantic search against MongoDB vector index
+2. user_profile_fetcher(user_id) — Fetch user's startup form data from PostgreSQL
+3. get_user_roadmap(user_id) — Fetch user's roadmap from PostgreSQL
+4. web_search(query) — Real-time web search via Tavily API
+
+SYSTEM PROMPT:
+The agent identifies as a "helpful startup advisor assistant" and:
+- Remembers conversation history and user details
+- Only calls tools when genuinely needed (not for greetings)
+- Calls ONE tool at a time
+- Answers clearly, concisely, and in a friendly manner
+
+CONVERSATION MEMORY:
+- PostgresSaver checkpointer stores full state per thread_id
+- thread_id = user_id (scoped per authenticated user)
+- Clean alternating sequence: HumanMessage → AIMessage → HumanMessage → ...
+- Checkpointer lifecycle managed by FastAPI lifespan context
+
+
+================================================================================
+8. DATA INGESTION & RAG PIPELINE
+================================================================================
+
+RAG ARCHITECTURE:
+
+Data Flow: File → Load → Chunk → Embed → Store → Search
+
+1. INGESTION (POST /ingest or manual script)
+   - Supported formats: PDF, JSON, TXT, HTML
+   - Loaders: PyPDFLoader, JSONLoader, TextLoader, BSHTMLLoader
+   - Chunking: RecursiveCharacterTextSplitter
+     * PDF/JSON: 800 chars, 200 overlap
+     * TXT: 1000 chars, 200 overlap
+     * HTML: 800 chars, 200 overlap (with HTML-aware separators)
+   - Embedding: Google Gemini Embedding 001 (768 dimensions)
+   - Deduplication: SHA-256 hash check before insertion
+   - Storage: MongoDB Atlas (rag_db.schemes collection)
+
+2. RETRIEVAL (search_in_vectordb)
+   - Uses MongoDB Atlas $vectorSearch aggregation
+   - Index: vector_index (cosine similarity, 768 dimensions)
+   - Returns top 5 most relevant documents
+   - Embedding cache: LRU cache (256 entries) for repeated queries
+
+3. GENERATION (agent3.py)
+   - Agent decides when to call fetch_schemes_from_vectordb tool
+   - RAG context injected as tool result into agent's tool messages
+   - Agent synthesizes final response with RAG context + conversation history
+
+
+================================================================================
+9. CURRENT STATUS AND COMPLETION
+================================================================================
+
+CURRENT DEVELOPMENT STAGE: MVP — Active Development
+Last Updated: April 5, 2026
+
+Completion Status:
+
+- Frontend: 80% complete
+  * Landing page and navigation ✓
+  * Scheme catalog with filtering ✓
+  * Scheme comparison (split + table views) ✓
+  * AI Bot with chat integration ✓ (fully working)
+  * Interactive roadmap visualization ✓
+  * Roadmap progress tracking ✓
+  * Chat history persistence ✓
+  * Markdown rendering in chat ✓
+  * User authentication UI ✓
+  * Dashboard with multiple components ✓
+  * Knowledge bank ✓
+  * Protected routes ✓
+  * Admin page (basic) ✓
+  * Responsive design ✓
+  * shadcn-ui component library ✓
+
+- Backend: 70% complete
+  * User signup/login endpoints ✓
+  * JWT authentication ✓
+  * Password hashing ✓
+  * Database connection with retry logic ✓
+  * Chat proxy to AI backend ✓
+  * Chat history endpoint ✓
+  * Roadmap generation endpoint ✓
+  * Roadmap retrieval endpoint ✓
+  * Startup form submission ✓
+  * User profile endpoint ✓
+  * Timeout and error handling for AI proxy ✓
+  * CORS configuration ✓
+
+- AI Backend: 85% complete
+  * LangGraph agent v3 (optimized) ✓
+  * FastAPI server with lifespan management ✓
+  * PostgreSQL checkpointer for conversation memory ✓
+  * MongoDB vector search (RAG) ✓
+  * Data ingestion pipeline (PDF, JSON, TXT, HTML) ✓
+  * Dual LLM support (Gemini + Groq fallback) ✓
+  * Tool-based architecture (4 tools) ✓
+  * Rate limiting for LLMs ✓
+  * Health check endpoint ✓
+  * Clean message storage (no post-processing needed) ✓
+
+- Database: 60% complete
+  * Users table ✓
+  * Startup forms table ✓
+  * Roadmaps table ✓
+  * LangGraph checkpointer tables ✓ (auto-managed)
+  * MongoDB vector index ✓
+  * Azure PostgreSQL configured ✓
+  * Connection retry logic ✓
+  * Missing: schema migration framework
+
+- DevOps/Deployment: 25% complete
+  * Development environment fully working ✓
+  * start-all.ps1 startup script ✓
+  * Version control (.gitignore) ✓
+  * Environment configuration (.env) ✓
+  * AI Backend deployed on Azure Container Apps ✓
+  * No CI/CD pipeline
+  * No frontend/backend production deployment
+
+- Testing: 5% complete
+  * Manual testing only
+  * No automated tests
+  * No test infrastructure
+
+
+================================================================================
+10. KNOWN LIMITATIONS & TECHNICAL DEBT
+================================================================================
+
+Critical Issues (Must Fix Before Production):
+1. JWT secret key has hardcoded fallback "supersecretkey"
+2. Token stored in localStorage (XSS vulnerability)
+3. Limited input validation on backend endpoints
+4. No rate limiting on sensitive endpoints
+5. No automated tests or CI/CD pipeline
+6. Database schema not versioned (no migration framework)
+7. CORS allows all origins (wildcard "*")
+
+Code Quality Issues:
+1. Some hardcoded URLs (localhost:5000) in frontend
+2. Backend uses hardcoded AI backend URL (http://127.0.0.1:7000)
+3. Legacy agent code (Schema.py, parts of utils.py) still present
+4. Roadmap generation still calls Azure deployment instead of local AI backend
+5. Inconsistent error handling patterns across backend endpoints
+6. Some unused imports and dead code
+
+Performance Issues:
+1. No database query optimization (no indexes defined)
+2. No caching layer (Redis)
+3. Single Flask instance (no load balancing)
+4. LLM rate limits can cause delays (14 req/min for Gemini)
+5. No pagination on scheme listing
+6. No lazy loading implemented
+
+
+================================================================================
+11. ENVIRONMENT VARIABLES
+================================================================================
+
+Backend (.env):
+- DB_HOST: PostgreSQL host
+- DB_USER: Database username
+- DB_PASSWORD: Database password
+- SECRET_KEY: JWT signing secret
+
+AI Backend (.env):
+- GOOGLE_API_KEY: Google Gemini API key
+- GROQ_API_KEY: Groq API key
+- TAVILY_API_KEY: Tavily web search API key
+- CONNECTION_URI: MongoDB Atlas connection string
+- POSTGRES_CONNECTION_STRING: PostgreSQL connection string for checkpointer
+- DB_HOST: PostgreSQL host (for user data queries)
+- DB_USER: Database username
+- DB_PASSWORD: Database password
+- FLASK_BACKEND_ORIGIN: Flask backend URL (default http://localhost:5000)
+
+
+================================================================================
+12. HOW TO USE THIS CONTEXT WITH LLMs
+================================================================================
+
+EXPECTED TYPES OF ASSISTANCE:
+
+Code Implementation:
+- Generating new features or components
+- Refactoring existing code
+- Fixing bugs or errors
+- Code review and suggestions
+
+Architecture & Design:
+- System design reviews
+- Technology selection recommendations
+- Scaling strategies
+- API design
+
+AI/ML Features:
+- LangGraph agent improvements
+- RAG pipeline optimization
+- Prompt engineering
+- Tool design and implementation
+- LLM selection and fine-tuning
+
+SPECIFIC CONTEXT CLUES:
+
+Frontend Development:
+- React/TypeScript with Vite
+- shadcn-ui for UI components
+- Tailwind CSS for styling
+- Framer Motion for animations
+- React Query for server state
+- Context API for local state (UserProfile, SchemeComparison)
+
+Backend Development:
+- Python/Flask for REST API
+- psycopg2 for PostgreSQL
+- JWT for authentication
+- bcrypt for password hashing
+- Proxies to AI backend for chat
+
+AI Backend Development:
+- FastAPI with Uvicorn
+- LangGraph for agent orchestration
+- LangChain for LLM integration
+- Google Gemini as primary LLM
+- Groq/LLaMA as fallback
+- MongoDB Atlas for vector search
+- PostgresSaver for conversation memory
+
+CONSTRAINTS:
+- Python 3.11+ required
+- Flask (not FastAPI/Django) for main backend
+- FastAPI for AI backend
+- React/TypeScript (not Vue/Svelte)
+- PostgreSQL + MongoDB (dual database)
+- REST API pattern (not GraphQL)
+- JWT auth (stateless backend)
+
+
+================================================================================
+                                END OF DOCUMENT
+================================================================================
+
+DOCUMENT STATISTICS:
+- Total Sections: 12
+- Last Updated: April 5, 2026
+- Current Version: 3.0
+- Prepared For: ChatGPT, Claude, Gemini, and AI Code Assistants
+
+DOCUMENT CHANGES IN VERSION 3.0:
+- Complete rewrite to reflect current project state
+- Updated from "AI bot placeholder" to "fully implemented LangGraph agent"
+- Added AI Backend as separate service tier in architecture
+- Documented agent3.py architecture, tools, and message storage strategy
+- Added RAG pipeline and data ingestion documentation
+- Updated all API endpoints (backend + AI backend)
+- Added new frontend components (roadmap, scheme-comparison, admin)
+- Added new contexts (SchemeComparisonContext)
+- Updated completion percentages (Frontend: 80%, Backend: 70%, AI: 85%)
+- Documented dual LLM support (Gemini + Groq fallback)
+- Added MongoDB Atlas vector database documentation
+- Added environment variables reference
+- Added data flow diagrams (chat, roadmap, history)
+- Added file structure tree
+- Removed outdated "planned/future" sections that are now implemented
+
+================================================================================

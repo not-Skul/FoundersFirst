@@ -63,10 +63,10 @@ export function Footer() {
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2024 FoundersFirst. All rights reserved.
+            © 2026 FoundersFirst. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground flex items-center gap-1">
-            Made with <span className="text-accent">❤️</span> for Indian entrepreneurs
+            Made with <span className="text-accent">❤️</span> for Bharat's entrepreneurs
           </p>
         </div>
       </div>
