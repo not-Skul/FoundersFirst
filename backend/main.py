@@ -18,16 +18,18 @@ app = Flask(__name__)
 
 CORS(app)  
 bcrypt = Bcrypt(app)
-AI_Backend_URL = "http://127.0.0.1:7000"
+AI_Backend_URL = os.getenv("AI_BACKEND_URL", "http://localhost:7000")
 
 # Load schemes at startup
 def load_schemes():
-    """Load schemes from the JSON file"""
+    """Load schemes from the JSON file (must be in the same directory as main.py)."""
     try:
-        schemes_path = os.path.join(os.path.dirname(__file__), '..', 'ai-backend', 'schemes_structured_documents.json')
+        schemes_path = os.path.join(os.path.dirname(__file__), 'schemes_structured_documents.json')
         if os.path.exists(schemes_path):
             with open(schemes_path, 'r') as f:
                 return json.load(f)
+        else:
+            print("[WARN] schemes_structured_documents.json not found — scheme lookup disabled.")
     except Exception as e:
         print(f"Error loading schemes: {e}")
     return []
@@ -217,9 +219,15 @@ def roadmap_genration_form():
     conn.close()
     return ({"message" : "startup form sunmitted successfully"}), 201
 
-@app.route("/test",methods = ["GET"])
+@app.route("/health", methods=["GET"])
+def health_check():
+    """Liveness endpoint for Azure Container Apps health probes."""
+    return jsonify({"status": "ok"}), 200
+
+
+@app.route("/test", methods=["GET"])
 def testapi():
-    data= requests.get("https://aibackend.thankfulriver-53eeedbe.southeastasia.azurecontainerapps.io" + "/test")
+    data = requests.get(AI_Backend_URL + "/test")
     return jsonify(data.json()), 200
 
 
@@ -436,24 +444,20 @@ def get_chat_history():
 @app.route("/chat_with_roadmap", methods=["POST"])
 def chat_simple():
     """
-    Legacy chat endpoint (kept for backward compatibility).
-    Uses the old Azure backend instead of the new LangGraph streaming.
-    
+    Legacy chat endpoint — now routes to the local AI backend /roadmap/ endpoint.
     Prefer /chat/stream for new implementations.
     """
     data = request.json
     message = data["message"]
-    context = data.get("context", "")
-    
-    # Get user ID from token
+
     user_id = get_user_from_token()
-    
-    # Build enriched prompt using the helper
     final_prompt = build_chat_context(user_id, message)
-    
-    encoded = quote(final_prompt)
-    url = "https://aibackend.thankfulriver-53eeedbe.southeastasia.azurecontainerapps.io/rag/" + encoded
-    ai = requests.get(url, timeout=60)
+
+    ai = requests.get(
+        f"{AI_Backend_URL}/roadmap/",
+        params={"query": final_prompt},
+        timeout=60,
+    )
     return jsonify(ai.json())
 
 @app.route("/my-roadmap", methods=["GET"])
@@ -488,7 +492,6 @@ def my_roadmap():
 @app.route("/generate_roadmap", methods=["POST"])
 def generate_roadmap():
     data = request.json
-    # user_id = data.get("user_id", 1)
     user_id = get_user_from_token()
     print("USER_ID:", user_id)
     if not user_id:
@@ -497,7 +500,7 @@ def generate_roadmap():
     startup_idea = data.get("startup_idea", "")
 
     ai = requests.get(
-        "https://aibackend.thankfulriver-53eeedbe.southeastasia.azurecontainerapps.io/roadmap/",
+        f"{AI_Backend_URL}/roadmap/",
         params={"query": query},
         timeout=60
     )
@@ -563,13 +566,15 @@ def update_startup_idea():
         age, gender, category, location, funding_status = form_data
         query = f"I am {age} years old {gender}. I want to build {new_idea}. My category is {category}, located in {location}. Funding status: {funding_status}."
     else:
-        query = new_idea
+        cur.close()
+        conn.close()
+        return jsonify({"error": "No startup form found for user"}), 404
 
     try:
         ai = requests.get(
-            "https://aibackend.thankfulriver-53eeedbe.southeastasia.azurecontainerapps.io/roadmap/",
+            f"{AI_Backend_URL}/roadmap/",
             params={"query": query},
-            timeout=80
+            timeout=80,
         )
         raw = ai.json()
         text = raw["response"]
@@ -582,8 +587,8 @@ def update_startup_idea():
             VALUES (%s, %s, %s)
             RETURNING id
         """, (user_id, new_idea, json.dumps(roadmap)))
-        
-        # Optionally, clear old progress since it's a new roadmap
+
+        # Clear old progress since it's a new roadmap
         cur.execute("DELETE FROM roadmap_progress WHERE user_id = %s", (user_id,))
         conn.commit()
     except Exception as e:
@@ -672,4 +677,5 @@ def get_user_profile():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # For local development only — production uses gunicorn via Dockerfile CMD
+    app.run(debug=False, host="0.0.0.0", port=5000)

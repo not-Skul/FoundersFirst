@@ -13,6 +13,10 @@ import { useSchemeComparison } from "@/contexts/SchemeComparisonContext";
 import { RoadmapPhase, RoadmapStatus } from "@/types";
 
 
+// ---------------------------------------------------------------------------
+// API base URL — set VITE_API_URL in .env (dev) or .env.production (prod)
+// ---------------------------------------------------------------------------
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 interface Message {
   role: "user" | "assistant";
@@ -91,7 +95,7 @@ const AIBot = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
       
-      const res = await axios.get("http://localhost:5000/roadmap/progress", {
+      const res = await axios.get(`${API_BASE}/roadmap/progress`, {
         headers: { Authorization: token },
       });
       if (res.data) {
@@ -124,7 +128,7 @@ const AIBot = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const res = await axios.get("http://localhost:5000/chat/history", {
+      const res = await axios.get(`${API_BASE}/chat/history`, {
         headers: { Authorization: token },
       });
 
@@ -147,7 +151,7 @@ const AIBot = () => {
     
     const token = localStorage.getItem("token");
     if (token) {
-      axios.post("http://localhost:5000/roadmap/progress", {
+      axios.post(`${API_BASE}/roadmap/progress`, {
         completedSteps: stepsToSave,
         currentPhaseIndex: phaseToSave
       }, {
@@ -166,7 +170,7 @@ const AIBot = () => {
     }
 
     axios
-      .get("http://localhost:5000/my-roadmap", {
+      .get(`${API_BASE}/my-roadmap`, {
         headers: { Authorization: token },
       })
       .then((res) => {
@@ -208,7 +212,7 @@ const handleFormSubmit = async (e: React.FormEvent) => {
 
   try {
     // Save form
-    await axios.post("http://localhost:5000/roadmap_genration_form", {
+    await axios.post(`${API_BASE}/roadmap_genration_form`, {
       user_id: 1,
       startup_idea: formData.idea,
       age: Number(formData.age),
@@ -222,7 +226,7 @@ const handleFormSubmit = async (e: React.FormEvent) => {
     const token = localStorage.getItem("token");
 
     const aiRes = await axios.post(
-        "http://localhost:5000/generate_roadmap",
+        `${API_BASE}/generate_roadmap`,
         {
           query: `I am ${formData.age} years old ${formData.gender}. 
           I want to build ${formData.idea}. 
@@ -304,7 +308,7 @@ const handleFormSubmit = async (e: React.FormEvent) => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        "http://localhost:5000/startup/idea",
+        `${API_BASE}/startup/idea`,
         { new_idea: editIdeaText },
         { headers: { Authorization: token } }
       );
@@ -352,7 +356,7 @@ const handleFormSubmit = async (e: React.FormEvent) => {
       const token = localStorage.getItem("token");
 
       // Create POST request to /chat/stream
-      const response = await fetch("http://localhost:5000/chat/stream", {
+      const response = await fetch(`${API_BASE}/chat/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

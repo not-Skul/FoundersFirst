@@ -1,27 +1,4 @@
-"""
-app.py — Unified FastAPI AI Backend Server.
-
-Combines responsibilities from server.py and main.py:
-  - Manage PostgresSaver checkpointer lifecycle via FastAPI lifespan
-  - Initialize and manage RAG ingestion pipeline
-  - Compile and expose the LangGraph agent
-  - Provide a streaming SSE endpoint for chat (/chat/stream)
-  - Provide traditional RAG & ingestion endpoints
-  - Provide health-check endpoint for infra/monitoring
-
-Replaces:
-  - server.py (chat streaming)
-  - main.py (RAG and ingestion)
-
-To start:
-  uvicorn app:app --port 8001
-"""
-
-import asyncio
 import sys
-if sys.platform.startswith("win"):
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
 import logging
 import os
 import traceback
@@ -37,6 +14,7 @@ from pydantic import BaseModel
 from langchain_google_genai import ChatGoogleGenerativeAI
 from agent3 import build_graph, get_config, get_clean_messages
 from utils import search_in_vectordb
+import uvicorn
 from data_ingestion.ingestion_pipeline import IngestionPipeline
 
 # ---------------------------------------------------------------------------
@@ -132,11 +110,13 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 # CORS Middleware
 # ---------------------------------------------------------------------------
+# Allow the Flask backend (server-to-server) and any configured frontend origin
 FLASK_ORIGIN = os.getenv("FLASK_BACKEND_ORIGIN", "http://localhost:5000")
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:8080")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins="*",
+    allow_origins=[FLASK_ORIGIN, FRONTEND_ORIGIN],
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "Authorization"],
@@ -493,12 +473,10 @@ async def ingest_file(file: UploadFile = File(...)):
 # Startup Script Entry Point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    import uvicorn
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    # For local development only — production uses Dockerfile CMD
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8001)),
-        reload=True,  # Disable reload in production
+        port=int(os.getenv("PORT", 7000)),
+        reload=False,
     )

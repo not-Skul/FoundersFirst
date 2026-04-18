@@ -1,0 +1,32 @@
+# docker-compose.yml (project root)
+
+version: "3.9"
+
+services:
+  flask-backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override with Docker internal service name (not the value in .env)
+      - AI_BACKEND_URL=http://ai-backend:7000
+    networks:
+      - founders-network
+
+  ai-backend:
+    build: ./ai-backend
+    ports:
+      - "7000:7000"
+    env_file:
+      - ./ai-backend/.env
+    environment:
+      # Override with Docker internal service name (not the value in .env)
+      - FLASK_BACKEND_ORIGIN=http://flask-backend:5000
+    networks:
+      - founders-network
+
+networks:
+  founders-network:
+    driver: bridge

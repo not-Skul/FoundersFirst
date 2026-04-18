@@ -12,11 +12,17 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, Tool
 
 load_dotenv()
 
-# --- Singletons (initialized once at module load) ---
+_embeddings = None
 
-embeddings = GoogleGenerativeAIEmbeddings(
-    model="gemini-embedding-001", output_dimensionality=768
-)
+def _get_embeddings():
+    """Lazy singleton — defers API key validation until first actual use."""
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = GoogleGenerativeAIEmbeddings(
+            model="gemini-embedding-001", output_dimensionality=768
+        )
+    return _embeddings
+
 
 # MongoDB: MongoClient is thread-safe and manages its own internal pool
 _mongo_client = MongoClient(
@@ -158,7 +164,8 @@ def clean_agent_state(messages: list, for_display: bool = False) -> list:
 @lru_cache(maxsize=256)  # cache up to 256 unique query embeddings
 def generate_embedding(text: str) -> list:
     """Generate (and cache) an embedding for the given text."""
-    return embeddings.embed_query(text)
+    return _get_embeddings().embed_query(text)
+
 
 
 def search_in_vectordb(query: str) -> list[dict]:
