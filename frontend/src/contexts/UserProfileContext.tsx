@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export interface UserProfile {
   id: string;
   displayName: string;
@@ -67,7 +69,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const response = await fetch('http://localhost:5000/user-profile', {
+        const response = await fetch(`${API_BASE}/user-profile`, {
           headers: { 'Authorization': token }
         });
 
@@ -83,8 +85,8 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         // Fetch roadmap progress stats dynamically
         try {
           const [roadmapRes, progressRes] = await Promise.all([
-            fetch('http://localhost:5000/my-roadmap', { headers: { 'Authorization': token } }),
-            fetch('http://localhost:5000/roadmap/progress', { headers: { 'Authorization': token } })
+            fetch(`${API_BASE}/my-roadmap`, { headers: { 'Authorization': token } }),
+            fetch(`${API_BASE}/roadmap/progress`, { headers: { 'Authorization': token } })
           ]);
 
           if (roadmapRes.ok && progressRes.ok) {

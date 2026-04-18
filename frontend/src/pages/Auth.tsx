@@ -7,6 +7,8 @@ import { Eye, EyeOff, ArrowLeft, Mail, Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -28,8 +30,8 @@ const Auth = () => {
     try {
       const url =
         mode === "login"
-          ? "http://localhost:5000/login"
-          : "http://localhost:5000/signup";
+          ? `${API_BASE}/login`
+          : `${API_BASE}/signup`;
 
       const payload =
         mode === "login"
