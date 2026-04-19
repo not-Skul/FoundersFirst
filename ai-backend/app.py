@@ -384,11 +384,16 @@ async def get_roadmap_response(query: str):
     query = query.replace("%20", " ")
     logger.info(f"[ROADMAP] query={query}")
 
-    response = final_roadmap_answer(query)
+    ai_message = final_roadmap_answer(query)
+    # Extract plain string content from the LangChain AIMessage object.
+    # Returning the object directly causes FastAPI to serialize it as a dict,
+    # which breaks the Flask backend's string-based parsing.
+    response_text = ai_message.content if hasattr(ai_message, "content") else str(ai_message)
+    logger.info(f"[ROADMAP] response length={len(response_text)}")
     return {
         "status": "success",
         "query": query,
-        "response": response
+        "response": response_text
     }
 
 

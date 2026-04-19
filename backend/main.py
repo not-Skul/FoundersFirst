@@ -9,6 +9,9 @@ import datetime
 import requests
 import json
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 from urllib.parse import quote
 
 
@@ -489,29 +492,85 @@ def my_roadmap():
         "roadmap": row[1]
     })
 
+def _parse_roadmap_text(text):
+    """
+    Safely parse the roadmap response from the AI backend.
+
+    The AI backend may return `response` as:
+      - A dict  → already parsed JSON; use directly.
+      - A string → may be wrapped in ```json ... ``` fences; strip and parse.
+      - None     → treat as an error.
+
+    Returns the parsed roadmap list/dict, or raises ValueError on failure.
+    """
+    logger.debug("[parse_roadmap] type(text)=%s", type(text).__name__)
+
+    if text is None:
+        raise ValueError("AI backend returned None for 'response'")
+
+    if isinstance(text, dict):
+        # Guard: a LangChain AIMessage object serialised as a dict has a "content"
+        # key (and "type": "ai") — it is NOT the roadmap payload itself.
+        # Extract the string content and fall through to normal string parsing.
+        if "content" in text and "type" in text:
+            logger.warning(
+                "[parse_roadmap] received a LangChain message dict; extracting 'content' key"
+            )
+            text = text["content"]
+            # Fall through to string parsing below
+        else:
+            # A genuine roadmap dict — return as-is
+            logger.debug("[parse_roadmap] text is already a dict, skipping regex")
+            return text
+
+    if isinstance(text, list):
+        logger.debug("[parse_roadmap] text is already a list, skipping regex")
+        return text
+
+    # text is a string — strip markdown fences and parse
+    clean = re.sub(r"```json|```", "", text).strip()
+    clean = re.sub(r"'(\d+)'", r"\1", clean)
+
+    try:
+        return json.loads(clean)
+    except json.JSONDecodeError as e:
+        logger.error("[parse_roadmap] JSON parse failed: %s | raw snippet: %.200s", e, clean)
+        raise ValueError(f"Failed to parse roadmap JSON: {e}") from e
+
+
 @app.route("/generate_roadmap", methods=["POST"])
 def generate_roadmap():
     data = request.json
     user_id = get_user_from_token()
     print("USER_ID:", user_id)
     if not user_id:
-         return jsonify({"error": "Unauthorized"}), 401
-    query = data["query"]
+        return jsonify({"error": "Unauthorized"}), 401
+
+    query = data.get("query")
+    if not query:
+        return jsonify({"error": "'query' is required"}), 400
     startup_idea = data.get("startup_idea", "")
 
-    ai = requests.get(
-        f"{AI_Backend_URL}/roadmap/",
-        params={"query": query},
-        timeout=60
-    )
+    try:
+        ai = requests.get(
+            f"{AI_Backend_URL}/roadmap/",
+            params={"query": query},
+            timeout=60,
+        )
+        ai.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logger.error("[generate_roadmap] AI backend request failed: %s", e)
+        return jsonify({"error": "Failed to reach AI backend"}), 502
 
     raw = ai.json()
-    text = raw["response"]
+    text = raw.get("response")
+    logger.debug("[generate_roadmap] type(text)=%s", type(text).__name__)
 
-    clean = re.sub(r"```json|```", "", text).strip()
-    clean = re.sub(r"'(\d+)'", r"\1", clean)
-
-    roadmap = json.loads(clean)
+    try:
+        roadmap = _parse_roadmap_text(text)
+    except ValueError as e:
+        logger.error("[generate_roadmap] %s", e)
+        return jsonify({"error": str(e)}), 500
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -526,9 +585,7 @@ def generate_roadmap():
     cur.close()
     conn.close()
 
-    return jsonify({
-        "roadmap": roadmap
-    }), 200
+    return jsonify({"roadmap": roadmap}), 200
 
 
 @app.route("/startup/idea", methods=["PUT"])
@@ -577,10 +634,9 @@ def update_startup_idea():
             timeout=80,
         )
         raw = ai.json()
-        text = raw["response"]
-        clean = re.sub(r"```json|```", "", text).strip()
-        clean = re.sub(r"'(\d+)'", r"\1", clean)
-        roadmap = json.loads(clean)
+        text = raw.get("response")
+        logger.debug("[update_startup_idea] type(text)=%s", type(text).__name__)
+        roadmap = _parse_roadmap_text(text)
 
         cur.execute("""
             INSERT INTO roadmaps (user_id, startup_idea, roadmap)
@@ -591,8 +647,13 @@ def update_startup_idea():
         # Clear old progress since it's a new roadmap
         cur.execute("DELETE FROM roadmap_progress WHERE user_id = %s", (user_id,))
         conn.commit()
+    except ValueError as e:
+        logger.error("[update_startup_idea] Parse error: %s", e)
+        cur.close()
+        conn.close()
+        return jsonify({"error": str(e)}), 500
     except Exception as e:
-        print("Error generating roadmap:", e)
+        logger.error("[update_startup_idea] Unexpected error: %s", e)
         cur.close()
         conn.close()
         return jsonify({"error": "Failed to regenerate roadmap"}), 500
