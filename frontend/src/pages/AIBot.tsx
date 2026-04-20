@@ -542,7 +542,21 @@ if (isHydrating) {
                             <option value="Tamil Nadu">Tamil Nadu</option>
                             <option value="Gujarat">Gujarat</option>
                             <option value="Telangana">Telangana</option>
-                            <option value="Other">Other</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="Assam">Assam</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Bihar">Bihar</option>
+                            <option value="West Bengal">West Bengal</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Chhattisgarh">Chhattisgarh</option>
+                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                            <option value="Jharkhand">Jharkhand</option>
+                            <option value="Ladakh">Ladakh</option>
+                            <option value="Madhya Pradesh">Madhya Pradesh</option>
+                            <option value="Manipur">Manipur</option>
+                            <option value="Others">Others</option>
+                        
                           </select>
                         </div>
                       </div>

@@ -49,17 +49,16 @@ const Auth = () => {
 
       sessionStorage.clear();
 
-      if (mode === "login" && res.data.token) {
-        localStorage.setItem("token", res.data.token);
-
-        window.dispatchEvent(new Event("auth-change"));
-
-        navigate("/dashboard");
-      }
-
-
       if (mode === "signup") {
-        navigate("/auth?mode=login");
+        alert("Great!, Now sign in with the new credentials and let's begin our journey.");
+        setMode("login");
+        setFormData({ ...formData, password: "" }); // Clear password for security
+      } else {
+        if (res.data.token) {
+          localStorage.setItem("token", res.data.token);
+        }
+        window.dispatchEvent(new Event("auth-change"));
+        navigate("/dashboard");
       }
 
     } catch (error) {
